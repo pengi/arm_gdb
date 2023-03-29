@@ -1,7 +1,19 @@
 arm-gdb
 =======
 
-Tools for debugging ARM registers within GDB
+Tools for inspecting ARM Cortex-M registers within GDB
+
+Currently supported:
+* SCB - System Control Block
+* SysTick
+* NVIC - Nested Vectored Interrupt Controller
+
+Install
+-------
+
+```
+pip install arm-gdb
+```
 
 Run
 ---
@@ -11,8 +23,10 @@ Start GDB and run
 python import arm_gdb
 ```
 
+Or add that line to `~/.gdbinit`
+
 Exmaples
----
+--------
 
 Dump of ARM System Control Block, with bitmask descriptions
 ```
