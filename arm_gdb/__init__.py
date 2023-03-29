@@ -25,6 +25,7 @@ import gdb
 from . import scb
 from . import systick
 from . import nvic
+from . import svd
 
 
 class ArmTools (gdb.Command):
@@ -34,10 +35,13 @@ class ArmTools (gdb.Command):
         super().__init__('arm', gdb.COMMAND_USER, gdb.COMPLETE_NONE, True)
 
     def invoke(self, argument, from_tty):
-        print("Useage: 'arm scb' or 'arm nvic'")
-
+        pass
 
 ArmTools()
 scb.ArmToolsSCB()
 systick.ArmToolsSysTick()
 nvic.ArmToolsNVIC()
+svd.ArmToolsSVD()
+svd.ArmToolsSVDList()
+svd.ArmToolsSVDInspect()
+svd.ArmToolsSVDLoadDB()

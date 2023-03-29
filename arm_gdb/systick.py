@@ -22,6 +22,7 @@
 # SOFTWARE.
 
 import gdb
+import argparse
 from .common import *
 
 
@@ -30,29 +31,47 @@ class ArmToolsSysTick (gdb.Command):
 
     # https://developer.arm.com/documentation/dui0552/a/cortex-m3-peripherals/system-timer--systick
     regs = [
-        RegisterDefBitfield("SYST_CSR", "SysTick Control and Status Register", 0xE000E010, 4, [
-            (0, 1, "ENABLE"),
-            (1, 1, "TICKINT"),
-            (2, 1, "CLKSOURCE"),
-            (16, 1, "COUNTFLAG")
+        RegisterDef("SYST_CSR", "SysTick Control and Status Register", 0xE000E010, 4, [
+            FieldBitfield("ENABLE", 0, 1),
+            FieldBitfield("TICKINT", 1, 1),
+            FieldBitfield("CLKSOURCE", 2, 1),
+            FieldBitfield("COUNTFLAG", 16, 1)
         ]),
-        RegisterDefBitfield("SYST_RVR", "SysTick Reload Value Register", 0xE000E014, 4, [
-            (0, 24, "RELOAD")
+        RegisterDef("SYST_RVR", "SysTick Reload Value Register", 0xE000E014, 4, [
+            FieldBitfield("RELOAD", 0, 24)
         ]),
-        RegisterDefBitfield("SYST_CVR", "SysTick Current Value Register", 0xE000E018, 4, [
-            (0, 24, "CURRENT")
+        RegisterDef("SYST_CVR", "SysTick Current Value Register", 0xE000E018, 4, [
+            FieldBitfield("CURRENT", 0, 24)
         ]),
-        RegisterDefBitfield("SYST_CALIB", "SysTick Calibration Value Register", 0xE000E01C, 4, [
-            (0, 25, "TENMS"),
-            (30, 1, "SKEW"),
-            (31, 1, "NOREF")
+        RegisterDef("SYST_CALIB", "SysTick Calibration Value Register", 0xE000E01C, 4, [
+            FieldBitfield("TENMS", 0, 25),
+            FieldBitfield("SKEW", 30, 1),
+            FieldBitfield("NOREF", 31, 1)
         ]),
     ]
 
     def __init__(self):
         super().__init__('arm systick', gdb.COMMAND_USER)
+        self.parser = argparse.ArgumentParser(
+            description="Inspect SysTick"
+        )
+        self.parser.add_argument(
+            '-d', '--descr',
+            dest='descr',
+            action='store_const',
+            const=True,
+            default=False,
+            help="Include description"
+        )
 
     def invoke(self, argument, from_tty):
+        argv = gdb.string_to_argv(argument)
+        try:
+            args = self.parser.parse_args(argv)
+        except SystemExit:
+            # We're running argparse in gdb, don't exit just return
+            return
+
         inf = gdb.selected_inferior()
         for reg in self.regs:
-            reg.dump(inf)
+            reg.dump(inf, args.descr)
