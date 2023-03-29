@@ -30,53 +30,60 @@ Exmaples
 
 Dump of ARM System Control Block, with bitmask descriptions
 ```
-(gdb) arm scb
-ACTLR  = 00000000                     // Auxiliary Control Register
-CPUID  = 410fc241                     // CPUID Base Register
-         00000001 -    1 - Revision
-         0000c240 -  c24 - PartNo
-         000f0000 -    f - Constant
-         41000000 -   41 - Implementer
-ICSR   = 04421003                     // Interrupt Control and State Register
-         00000003 -   03 - VECTACTIVE
-         00021000 -   21 - VECTPENDING
-         00400000 -    1 - ISRPENDING
-         04000000 -    1 - PENDSTSET
-VTOR   = 00000000                     // Vector Table Offset Register
-AIRCR  = fa050000                     // Application Interrupt and Reset Control Register
-         fa050000 - fa05 - VECTKEY
-SCR    = 00000000                     // System Control Register
-CCR    = 00000200                     // Configuration and Control Register
-         00000200 -    1 - STKALIGN
-SHPR1  = 00000000                     // System Handler Priority Register 1
-SHPR2  = 80000000                     // System Handler Priority Register 2
-         80000000 -   80 - PRI_11 - SVCall
-SHPR3  = e0000000                     // System Handler Priority Register 3
-         e0000000 -   e0 - PRI_15 - SysTick
-SHCRS  = 00000800                     // System Handler Control and State Register
-         00000800 -    1 - SYSTICKACT
-CFSR   = 00040000                     // Configurable Fault Status Register
-MMFSR  =       00                     // MemManage Fault Status Register
-MMFAR  = e000edf8                     // MemManage Fault Address Register
-BFSR   =       00                     // BusFault Status Register
-BFAR   = e000edf8                     // BusFault Address Register
-UFSR   =     0004                     // UsageFault Status Register
-             0004 -    1 - INVPC
-HFSR   = 40000000                     // HardFault Status Register
-         40000000 -    1 - FORCED
-AFSR   = 00000000                     // Auxiliary Fault Status Register
+(gdb) arm scb -d
+ACTLR                            = 00000000                   // Auxiliary Control Register
+CPUID                            = 410fc241                   // CPUID Base Register
+    Revision                       00000001 - 1
+    PartNo                         0000c240 - c24
+    Constant                       000f0000 - f
+    Implementer                    41000000 - 41
+ICSR                             = 0040080b                   // Interrupt Control and State Register
+    VECTACTIVE                     0000000b - 0b
+    RETTOBASE                      00000800 - 1
+    ISRPENDING                     00400000 - 1
+VTOR                             = 00000000                   // Vector Table Offset Register
+AIRCR                            = fa050000                   // Application Interrupt and Reset Control Register
+    VECTKEY                        fa050000 - fa05
+SCR                              = 00000010                   // System Control Register
+    SEVONPEND                      00000010 - 1
+CCR                              = 00000200                   // Configuration and Control Register
+    STKALIGN                       00000200 - 1
+SHPR1                            = 00000000                   // System Handler Priority Register 1
+SHPR2                            = 00000000                   // System Handler Priority Register 2
+SHPR3                            = 00000000                   // System Handler Priority Register 3
+SHCRS                            = 00000080                   // System Handler Control and State Register
+    SVCALLACT                      00000080 - 1
+CFSR                             = 00000000                   // Configurable Fault Status Register
+MMFSR                            =       00                   // MemManage Fault Status Register
+MMFAR                            = e000edf8                   // MemManage Fault Address Register
+BFSR                             =       00                   // BusFault Status Register
+BFAR                             = e000edf8                   // BusFault Address Register
+UFSR                             =     0000                   // UsageFault Status Register
+HFSR                             = 00000000                   // HardFault Status Register
+AFSR                             = 00000000                   // Auxiliary Fault Status Register
 ```
 
-Dump of ARM SysTick, with bitmask descriptions
+Dump of ARM SysTick
 ```
 (gdb) arm systick
-SYST_CSR   = 00000004                     // SysTick Control and Status Register
-             00000004 -    1 - CLKSOURCE
-SYST_RVR   = 00000000                     // SysTick Reload Value Register
-SYST_CVR   = 00000000                     // SysTick Current Value Register
-SYST_CALIB = c0000000                     // SysTick Calibration Value Register
-             40000000 -    1 - SKEW
-             80000000 -    1 - NOREF
+SYST_CSR                         = 00000004
+    CLKSOURCE                      00000004 - 1
+SYST_RVR                         = 00000000
+SYST_CVR                         = 00000000
+SYST_CALIB                       = c0000000
+    SKEW                           40000000 - 1
+    NOREF                          80000000 - 1
+```
+... or with descriptions
+```
+(gdb) arm systick -d
+SYST_CSR                         = 00000004                   // SysTick Control and Status Register
+    CLKSOURCE                      00000004 - 1
+SYST_RVR                         = 00000000                   // SysTick Reload Value Register
+SYST_CVR                         = 00000000                   // SysTick Current Value Register
+SYST_CALIB                       = c0000000                   // SysTick Calibration Value Register
+    SKEW                           40000000 - 1
+    NOREF                          80000000 - 1
 ```
 
 Dump of NVIC list, listing all enabled interrupt handlers, in a redirected
@@ -104,3 +111,41 @@ IRQn Prio          Handler
   25   80 en          0002a773 -
   32   20 en          0002a773 -
   ```
+
+To use an SVD file from cmsis-svd package database, use:
+
+This loads in the device description under a local name, in this case `nrf` for
+faster access in upcoming commands
+
+```
+(gdb) arm svd loaddb nrf Nordic nrf52.svd
+(gdb) arm svd list nrf
+FICR       @ 0x10000000
+UICR       @ 0x10001000
+BPROT      @ 0x40000000
+POWER      @ 0x40000000
+...
+(gdb) arm svd inspect nrf POWER
+POWER.TASKS_CONSTLAT             = 00000000
+POWER.TASKS_LOWPWR               = 00000000
+POWER.EVENTS_POFWARN             = 00000000
+POWER.EVENTS_SLEEPENTER          = 00000001
+POWER.EVENTS_SLEEPEXIT           = 00000001
+POWER.INTENSET                   = 00000002
+    POFWARN                        00000000 - Disabled
+    SLEEPENTER                     00000000 - Disabled
+    SLEEPEXIT                      00000000 - Disabled
+POWER.INTENCLR                   = 00000002
+    POFWARN                        00000000 - Disabled
+    SLEEPENTER                     00000000 - Disabled
+    SLEEPEXIT                      00000000 - Disabled
+POWER.RESETREAS                  = 00000008
+    RESETPIN                       00000000 - NotDetected
+    DOG                            00000000 - NotDetected
+    SREQ                           00000000 - NotDetected
+    LOCKUP                         00000008 - Detected
+    OFF                            00000000 - NotDetected
+    LPCOMP                         00000000 - NotDetected
+    DIF                            00000000 - NotDetected
+    NFC                            00000000 - NotDetected
+```
