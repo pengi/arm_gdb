@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Natural Language :: English",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+name = 'arm-gdb'
+version = '0.9.0'
+description = 'Python module for GDB to analyze ARM core registers'
+readme = "README.md"
+authors = [{ name = "Max Sikström", email = "max@pengi.se" }]
+license = { file = 'LICENSE' }
+
+dependencies = ["argparse >= 1.1"]
+requires-python = ">=3.6"
+
+[project.urls]
+Homepage = "https://github.com/pengi/arm_gdb"

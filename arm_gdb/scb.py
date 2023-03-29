@@ -22,7 +22,7 @@
 # SOFTWARE.
 
 import gdb
-from common import *
+from .common import *
 
 
 class ArmToolsSCB (gdb.Command):

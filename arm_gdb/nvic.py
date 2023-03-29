@@ -23,7 +23,7 @@
 
 import gdb
 import argparse
-from common import *
+from .common import *
 
 
 class ArmToolsNVIC (gdb.Command):
