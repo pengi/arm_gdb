@@ -30,21 +30,11 @@ from cmsis_svd.parser import SVDParser
 devices = {}
 
 
-class ArmToolsSVD (gdb.Command):
-    """Dump peripherals specified by SVD file"""
-
-    def __init__(self):
-        super().__init__('arm svd', gdb.COMMAND_USER, gdb.COMPLETE_NONE, True)
-
-    def invoke(self, argument, from_tty):
-        pass
-
-
 class ArmToolsSVDList (gdb.Command):
     """List peripherals from a loaded SVD file"""
 
     def __init__(self):
-        super().__init__('arm svd list', gdb.COMMAND_USER, gdb.COMPLETE_NONE, True)
+        super().__init__('arm list', gdb.COMMAND_USER, gdb.COMPLETE_NONE, True)
 
         self.parser = argparse.ArgumentParser(
             description="Inspect a peripheral from a loaded SVD file"
@@ -70,7 +60,7 @@ class ArmToolsSVDInspect (gdb.Command):
     """Dump peripherals specified by SVD file"""
 
     def __init__(self):
-        super().__init__('arm svd inspect', gdb.COMMAND_USER, gdb.COMPLETE_NONE, True)
+        super().__init__('arm inspect', gdb.COMMAND_USER, gdb.COMPLETE_NONE, True)
 
         self.parser = argparse.ArgumentParser(
             description="Inspect a peripheral from a loaded SVD file"
@@ -136,11 +126,35 @@ class ArmToolsSVDInspect (gdb.Command):
             reg.dump(inf, args.descr)
 
 
+class ArmToolsSVDLoadFile (gdb.Command):
+    """Load an SVD file from registry"""
+
+    def __init__(self):
+        super().__init__('arm loadfile', gdb.COMMAND_USER)
+
+        self.parser = argparse.ArgumentParser(
+            description="Load an SVD file given a path"
+        )
+        self.parser.add_argument('device')
+        self.parser.add_argument('filename')
+
+    def invoke(self, argument, from_tty):
+        argv = gdb.string_to_argv(argument)
+        try:
+            args = self.parser.parse_args(argv)
+        except SystemExit:
+            # We're running argparse in gdb, don't exit just return
+            return
+
+        parser = SVDParser.for_xml_file(args.filename)
+        devices[args.device] = parser.get_device()
+
+
 class ArmToolsSVDLoadDB (gdb.Command):
     """Load an SVD file from registry"""
 
     def __init__(self):
-        super().__init__('arm svd loaddb', gdb.COMMAND_USER)
+        super().__init__('arm loaddb', gdb.COMMAND_USER)
 
         self.parser = argparse.ArgumentParser(
             description="Load an SVD file from database. See cmsis-svd python package for a list"

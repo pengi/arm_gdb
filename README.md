@@ -118,14 +118,14 @@ This loads in the device description under a local name, in this case `nrf` for
 faster access in upcoming commands
 
 ```
-(gdb) arm svd loaddb nrf Nordic nrf52.svd
-(gdb) arm svd list nrf
+(gdb) arm loaddb nrf Nordic nrf52.svd
+(gdb) arm list nrf
 FICR       @ 0x10000000
 UICR       @ 0x10001000
 BPROT      @ 0x40000000
 POWER      @ 0x40000000
 ...
-(gdb) arm svd inspect nrf POWER
+(gdb) arm inspect nrf POWER
 POWER.TASKS_CONSTLAT             = 00000000
 POWER.TASKS_LOWPWR               = 00000000
 POWER.EVENTS_POFWARN             = 00000000

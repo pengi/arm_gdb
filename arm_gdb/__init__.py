@@ -37,11 +37,12 @@ class ArmTools (gdb.Command):
     def invoke(self, argument, from_tty):
         pass
 
+
 ArmTools()
 scb.ArmToolsSCB()
 systick.ArmToolsSysTick()
 nvic.ArmToolsNVIC()
-svd.ArmToolsSVD()
 svd.ArmToolsSVDList()
 svd.ArmToolsSVDInspect()
+svd.ArmToolsSVDLoadFile()
 svd.ArmToolsSVDLoadDB()
