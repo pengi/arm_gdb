@@ -26,8 +26,23 @@ import argparse
 from .common import *
 
 
-class ArmToolsNVIC (gdb.Command):
-    """Dump of ARM NVIC"""
+class ArmToolsNVIC (ArgCommand):
+    """Print current status of NVIC
+
+Usage: arm nvic [/a] [<number of IRQs>] [<ISR vector address>]
+
+Modifier /a lists all interrupt vectors, not only enabled
+    <count>              - optional. Number of ISRs to list. Defaults to 240
+    <ISR vector address> - optional. Specifies base address of ISR vector.
+                           If not specified, it will be resolved via SCB->VTOR,
+                           which is valid in most cases.
+
+Examples:
+    arm nvic /a 64            - list all ISRs from -15 to 63
+    arm nvic 80 &__isr_vector - Custom ISR vector, useful when proxying
+                                interrupts via another system, like the
+                                softdevice on nRF52
+"""
 
     # Numbers represents bit numbers in control regiters for:
     # (enabled, active, pedning)
@@ -57,55 +72,32 @@ class ArmToolsNVIC (gdb.Command):
 
     def __init__(self):
         super().__init__('arm nvic', gdb.COMMAND_USER)
-
-        self.parser = argparse.ArgumentParser(
-            description="Get NVIC parameters"
-        )
-        self.parser.add_argument('-a', '--all',
-                                 action='store_const',
-                                 const=True,
-                                 default=False,
-                                 dest='all',
-                                 help='Show all, and not only enabled'
-                                 )
-
-        self.parser.add_argument('-N', '--count',
-                                 action='store',
-                                 dest='count',
-                                 metavar='N',
-                                 help='Number of ISR vectors',
-                                 default=240,
-                                 type=lambda s: int(s, 0)
-                                 )
-
-        self.parser.add_argument('-V', '--vtor',
-                                 action='store',
-                                 dest='vtor',
-                                 metavar='ADDR',
-                                 help='Alternative interrupt vector address',
-                                 default=None,
-                                 type=gdb.parse_and_eval
-                                 )
+        self.add_mod('a', 'all')
+        self.add_arg(ArgType('count', gdb.COMPLETE_EXPRESSION, optional=True))
+        self.add_arg(ArgType('vtor', gdb.COMPLETE_EXPRESSION, optional=True))
 
     def get_bit(self, IRQn, REG):
         return (REG[IRQn // 32] & (1 << (IRQn % 32))) != 0
 
     def invoke(self, argument, from_tty):
-        argv = gdb.string_to_argv(argument)
-        try:
-            args = self.parser.parse_args(argv)
-        except SystemExit:
-            # We're running argparse in gdb, don't exit just return
+        args = self.process_args(argument)
+        if args is None:
+            self.print_help()
             return
 
         inf = gdb.selected_inferior()
 
-        if args.vtor:
-            VTOR = args.vtor
+        if 'vtor' in args:
+            VTOR = gdb.parse_and_eval(args['vtor'])
         else:
             # Vector Table Offset Register
             VTOR = read_reg(inf, 0xE000ED08, 4)
             STIR = read_reg(inf, 0xE000E010, 4)
+
+        if 'count' in args:
+            count = gdb.parse_and_eval(args['count'])
+        else:
+            count = 240
 
         # Maskable handlers
         SHPR = [read_reg(inf, 0xE000ED18 + 4*i, 4) for i in range(3)]
@@ -125,7 +117,7 @@ class ArmToolsNVIC (gdb.Command):
 
         print("IRQn Prio          Handler")
 
-        for IRQn in range(-15, args.count):
+        for IRQn in range(-15, count):
             handler_addr = read_reg(inf, VTOR + 4*(16+IRQn), 4)
             handler_func = gdb.block_for_pc(handler_addr)
             if handler_func is None:
@@ -166,7 +158,7 @@ class ArmToolsNVIC (gdb.Command):
                 name = ""
                 prio = (NVIC_IPR[IRQn//4] >> (8*(IRQn % 4))) & 0xff
 
-            if enabled or args.all:
+            if enabled or args['all']:
                 print("%4d %4x %s %s %s %08x %s%s" % (
                     IRQn,
                     prio,

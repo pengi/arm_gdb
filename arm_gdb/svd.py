@@ -27,71 +27,135 @@ from .common import *
 
 from cmsis_svd.parser import SVDParser
 
+# To auto complete `amd loaddb`
+import pkg_resources
+
 devices = {}
 
 
-class ArmToolsSVDList (gdb.Command):
-    """List peripherals from a loaded SVD file"""
+class DevicesArgType(ArgType):
+    def __init__(self, name, optional=False):
+        super().__init__(name, optional=optional)
 
-    def __init__(self):
-        super().__init__('arm list', gdb.COMMAND_USER, gdb.COMPLETE_NONE, True)
+    def complete(self, word, args={}):
+        return [w for w in devices.keys() if w.startswith(word)]
 
-        self.parser = argparse.ArgumentParser(
-            description="Inspect a peripheral from a loaded SVD file"
-        )
-        self.parser.add_argument('device')
-
-    def invoke(self, argument, from_tty):
-        argv = gdb.string_to_argv(argument)
-        try:
-            args = self.parser.parse_args(argv)
-        except SystemExit:
-            # We're running argparse in gdb, don't exit just return
-            return
-
-        device = devices[args.device]
-
-        for peripheral in device.peripherals:
-            print("%-10s @ 0x%08x" %
-                  (peripheral.name, peripheral.base_address))
+    def get(self, word, args={}):
+        return devices[word]
 
 
-class ArmToolsSVDInspect (gdb.Command):
-    """Dump peripherals specified by SVD file"""
+class PeripheralsArgType(ArgType):
+    def __init__(self, name, device_arg, optional=False):
+        super().__init__(name, optional=optional)
+        self.device_arg = device_arg
 
-    def __init__(self):
-        super().__init__('arm inspect', gdb.COMMAND_USER, gdb.COMPLETE_NONE, True)
+    def complete(self, word, args={}):
+        device = args[self.device_arg]
+        return [p.name for p in device.peripherals if p.name.startswith(word)]
 
-        self.parser = argparse.ArgumentParser(
-            description="Inspect a peripheral from a loaded SVD file"
-        )
-        self.parser.add_argument('device')
-        self.parser.add_argument('peripheral')
-        self.parser.add_argument(
-            '-d', '--descr',
-            dest='descr',
-            action='store_const',
-            const=True,
-            default=False,
-            help="Include description"
-        )
-
-    def invoke(self, argument, from_tty):
-        argv = gdb.string_to_argv(argument)
-        try:
-            args = self.parser.parse_args(argv)
-        except SystemExit:
-            # We're running argparse in gdb, don't exit just return
-            return
-
-        device = devices[args.device]
-        peripheral = None
+    def get(self, word, args={}):
+        device = args[self.device_arg]
         for p in device.peripherals:
-            if p.name == args.peripheral:
-                peripheral = p
-        if peripheral is None:
-            print("Unknown peripheral", args.peripheral)
+            if p.name == word:
+                return p
+        return None
+
+
+class ArmToolsSVDList (ArgCommand):
+    """List peripherals and registers from device
+    
+Usage: arm list
+
+Lists loaded devices
+
+Usage: arm list <device>
+
+List peripherals from a device
+
+Usage: arm list <device> <peripheral>
+
+List registers from a peripheral
+
+Examples:
+    arm list
+    arm list nrf52840
+    arm list nrf52840 UARTE0
+"""
+
+    def __init__(self):
+        super().__init__('arm list', gdb.COMMAND_SUPPORT)
+        self.add_arg(DevicesArgType('device', optional=True))
+        self.add_arg(PeripheralsArgType('peripheral', 'device', optional=True))
+
+    def invoke(self, argument, from_tty):
+        args = self.process_args(argument)
+        if args is None:
+            self.print_help()
             return
+
+        if not 'device' in args:
+            print("Devices loaded:")
+            for device in devices.keys():
+                print(" -", device)
+        elif not 'peripheral' in args:
+            device = args['device']
+            print("Peripherals:")
+            for peripheral in device.peripherals:
+                print(
+                    "%-10s @ 0x%08x" % (
+                        peripheral.name,
+                        peripheral.base_address
+                    )
+                )
+        else:
+            device = args['device']
+            peripheral = args['peripheral']
+            print(
+                "Registers in %s @ 0x%08x:" % (
+                    peripheral.name,
+                    peripheral.base_address
+                )
+            )
+            for register in peripheral.registers:
+                print(
+                    " - %s @ +0x%x" % (
+                        register.name,
+                        register.address_offset
+                    )
+                )
+                for field in register._fields:
+                    mask = "." * (32-field.bit_offset-field.bit_width) + \
+                        "#" * field.bit_width + "." * field.bit_offset
+
+                    print("        %s %s" % (mask, field.name))
+
+
+class ArmToolsSVDInspect (ArgCommand):
+    """Dump register values from device peripheral
+
+Usage: arm inspect /h <device> <peripheral>
+
+Modifier /h provides descriptions of names where available
+
+    <device>     - Name of loaded device. See `help arm loadfile`
+    <peripheral> - Name of peripheral
+
+Exmaple: arm inspect nrf52840 UARTE0
+"""
+
+    def __init__(self):
+        super().__init__('arm inspect', gdb.COMMAND_DATA)
+        self.add_arg(DevicesArgType('device'))
+        self.add_arg(PeripheralsArgType('peripheral', 'device'))
+        self.add_mod('h', 'descr')
+
+    def invoke(self, argument, from_tty):
+        args = self.process_args(argument)
+        if args is None:
+            self.print_help()
+            return
+
+        peripheral = args['peripheral']
 
         inf = gdb.selected_inferior()
 
@@ -123,53 +187,72 @@ class ArmToolsSVDInspect (gdb.Command):
                 4,
                 fields
             )
-            reg.dump(inf, args.descr)
+            reg.dump(inf, args['descr'])
 
 
-class ArmToolsSVDLoadFile (gdb.Command):
-    """Load an SVD file from registry"""
+class ArmToolsSVDLoadFile (ArgCommand):
+    """Load an SVD file from file
+
+Usage: arm loadfile <device> <filename>
+
+    <device>    - Name to refer to the device in commands like `arm inspect`
+    <filename>  - SVD file to load
+
+This command can preferrably be added to .gdbinit for easy access of devices
+"""
 
     def __init__(self):
         super().__init__('arm loadfile', gdb.COMMAND_USER)
-
-        self.parser = argparse.ArgumentParser(
-            description="Load an SVD file given a path"
-        )
-        self.parser.add_argument('device')
-        self.parser.add_argument('filename')
+        self.add_arg(ArgType('device', gdb.COMPLETE_NONE))
+        self.add_arg(ArgType('filename', gdb.COMPLETE_FILENAME))
 
     def invoke(self, argument, from_tty):
-        argv = gdb.string_to_argv(argument)
-        try:
-            args = self.parser.parse_args(argv)
-        except SystemExit:
-            # We're running argparse in gdb, don't exit just return
+        args = self.process_args(argument)
+        if args is None:
+            self.print_help()
             return
 
-        parser = SVDParser.for_xml_file(args.filename)
-        devices[args.device] = parser.get_device()
+        parser = SVDParser.for_xml_file(args['filename'])
+        devices[args['device']] = parser.get_device()
 
 
-class ArmToolsSVDLoadDB (gdb.Command):
-    """Load an SVD file from registry"""
+class ArmToolsSVDLoadDB (ArgCommand):
+    """Load an SVD file from resitry
+
+Usage: arm loaddb <device> <vendor> <filename>
+
+    <device>    - Name to refer to the device in commands like `arm inspect`
+    <vendor>    - Device vendor
+    <filename>  - SVD file within registry
+
+Load file from cmsis-svd package registry. Many common devices are available. If
+not available, you can load a custom svd file using `arm loadfile`
+
+This command can preferrably be added to .gdbinit for easy access of devices
+"""
 
     def __init__(self):
         super().__init__('arm loaddb', gdb.COMMAND_USER)
+        self.add_arg(ArgType('device', gdb.COMPLETE_NONE))
+        self.add_arg(ArgType('vendor', self.get_vendors))
+        self.add_arg(ArgType('filename', self.get_filenames))
 
-        self.parser = argparse.ArgumentParser(
-            description="Load an SVD file from database. See cmsis-svd python package for a list"
+    def get_vendors(self, word, args):
+        vendors = pkg_resources.resource_listdir('cmsis_svd', 'data')
+        return [v for v in vendors if v.startswith(word)]
+
+    def get_filenames(self, word, args):
+        files = pkg_resources.resource_listdir(
+            'cmsis_svd',
+            'data/'+args['vendor']
         )
-        self.parser.add_argument('device')
-        self.parser.add_argument('vendor')
-        self.parser.add_argument('filename')
+        return [f for f in files if f.startswith(word)]
 
     def invoke(self, argument, from_tty):
-        argv = gdb.string_to_argv(argument)
-        try:
-            args = self.parser.parse_args(argv)
-        except SystemExit:
-            # We're running argparse in gdb, don't exit just return
+        args = self.process_args(argument)
+        if args is None:
+            self.print_help()
             return
 
-        parser = SVDParser.for_packaged_svd(args.vendor, args.filename)
-        devices[args.device] = parser.get_device()
+        parser = SVDParser.for_packaged_svd(args['vendor'], args['filename'])
+        devices[args['device']] = parser.get_device()

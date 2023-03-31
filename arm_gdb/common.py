@@ -21,6 +21,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import gdb
+
+
 def read_reg(inf, addr, len):
     bs = inf.read_memory(addr, len).tobytes()
     return sum(v << (8*i) for i, v in enumerate(bs))
@@ -29,6 +32,101 @@ def read_reg(inf, addr, len):
 def format_int(val, bits):
     chars = (bits + 3) // 4
     return (("0" * chars) + ("%x" % (val,)))[-chars:]
+
+
+class ArgType:
+    def __init__(self, name, completer=None, getter=None, optional=False):
+        self.name = name
+        self.completer = completer
+        self.getter = getter
+        self.optional = optional
+
+    def complete(self, word, args={}):
+        if self.completer is None:
+            return gdb.COMPLETE_NONE
+        elif callable(self.completer):
+            return self.completer(word, args)
+        else:
+            return self.completer
+
+    def get(self, word, args={}):
+        if self.getter is None:
+            return word
+        else:
+            return self.getter(word, args)
+
+
+class ArgCommand(gdb.Command):
+    def __init__(self, name, command_class=gdb.COMMAND_USER):
+        super().__init__(name, command_class)
+        self.name = name
+        self.arg_list = []
+        self.arg_mods = []
+
+    def add_arg(self, argtype):
+        self.arg_list.append(argtype)
+
+    def add_mod(self, letter, name):
+        self.arg_mods.append((letter, name))
+
+    def complete(self, text, word):
+        args = gdb.string_to_argv(text)
+
+        if len(args) > 0 and args[0].startswith('/'):
+            # First arg is modifiers
+            mods = args[0][1:]
+            args = args[1:]
+        else:
+            mods = ""
+
+        # If ends with space, then it's the next argument that should start
+        if len(text) == 0 or text[-1] == ' ':
+            args.append("")
+
+        if len(args) > len(self.arg_list):
+            return gdb.COMPLETE_NONE
+
+        values = {}
+        for cur_arg, cur_argtype in zip(args[:-1], self.arg_list):
+            values[cur_argtype.name] = cur_argtype.get(cur_arg, values)
+
+        return self.arg_list[len(args)-1].complete(args[-1], values)
+
+    def process_args(self, text):
+        args = gdb.string_to_argv(text)
+        if len(args) > 0 and args[0].startswith('/'):
+            # First arg is modifiers
+            mods = args[0][1:]
+            args = args[1:]
+        else:
+            mods = ""
+
+        if len(args) > len(self.arg_list):
+            return None
+
+        for i, argtype in enumerate(self.arg_list):
+            if not argtype.optional and len(args) <= i:
+                return None
+
+        values = {}
+
+        for m_letter, m_name in self.arg_mods:
+            values[m_name] = mods.count(m_letter) > 0
+
+        for cur_arg, cur_argtype in zip(args, self.arg_list):
+            values[cur_argtype.name] = cur_argtype.get(cur_arg, values)
+
+        return values
+
+    def print_help(self):
+        args = [self.name]
+        if len(self.arg_mods) > 0:
+            args += ['/' + ''.join(letter for letter, name in self.arg_mods)]
+        args += [
+            ('[<%s>]' if arg.optional else '<%s>') % (arg.name,)
+            for arg in self.arg_list
+        ]
+        print("Usage:", *args)
 
 
 class RegisterDef:

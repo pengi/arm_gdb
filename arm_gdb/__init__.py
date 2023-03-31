@@ -29,13 +29,13 @@ from . import svd
 
 
 class ArmTools (gdb.Command):
-    """Tools for debugging ARM"""
+    """Tools for debugging ARM Cortex-M - series CPUs"""
 
     def __init__(self):
         super().__init__('arm', gdb.COMMAND_USER, gdb.COMPLETE_NONE, True)
 
     def invoke(self, argument, from_tty):
-        pass
+        gdb.execute('help arm')
 
 
 ArmTools()

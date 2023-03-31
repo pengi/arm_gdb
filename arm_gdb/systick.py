@@ -26,8 +26,13 @@ import argparse
 from .common import *
 
 
-class ArmToolsSysTick (gdb.Command):
-    """Dump of ARM SysTick"""
+class ArmToolsSysTick (ArgCommand):
+    """Dump of ARM Cortex-M SysTick block
+
+Usage: arm systick [/h]
+
+Modifier /h provides descriptions of names where available
+"""
 
     # https://developer.arm.com/documentation/dui0552/a/cortex-m3-peripherals/system-timer--systick
     regs = [
@@ -51,27 +56,15 @@ class ArmToolsSysTick (gdb.Command):
     ]
 
     def __init__(self):
-        super().__init__('arm systick', gdb.COMMAND_USER)
-        self.parser = argparse.ArgumentParser(
-            description="Inspect SysTick"
-        )
-        self.parser.add_argument(
-            '-d', '--descr',
-            dest='descr',
-            action='store_const',
-            const=True,
-            default=False,
-            help="Include description"
-        )
+        super().__init__('arm systick', gdb.COMMAND_DATA)
+        self.add_mod('h', 'descr')
 
     def invoke(self, argument, from_tty):
-        argv = gdb.string_to_argv(argument)
-        try:
-            args = self.parser.parse_args(argv)
-        except SystemExit:
-            # We're running argparse in gdb, don't exit just return
+        args = self.process_args(argument)
+        if args is None:
+            self.print_help()
             return
 
         inf = gdb.selected_inferior()
         for reg in self.regs:
-            reg.dump(inf, args.descr)
+            reg.dump(inf, args['descr'])

@@ -26,8 +26,13 @@ import argparse
 from .common import *
 
 
-class ArmToolsSCB (gdb.Command):
-    """Dump of ARM SCB"""
+class ArmToolsSCB (ArgCommand):
+    """Dump of ARM Cortex-M SCB - System Control Block
+
+Usage: arm scb [/h]
+
+Modifier /h provides descriptions of names where available
+"""
 
     # https://developer.arm.com/documentation/dui0552/a/cortex-m3-peripherals/system-control-block
     regs = [
@@ -112,7 +117,8 @@ class ArmToolsSCB (gdb.Command):
             FieldBitfield("BUSFAULTENA", 17, 1),
             FieldBitfield("USGFAULTENA", 18, 1),
         ]),
-        RegisterDef("CFSR", "Configurable Fault Status Register", 0xE000ED28, 4),
+        RegisterDef("CFSR", "Configurable Fault Status Register",
+                    0xE000ED28, 4),
         RegisterDef("MMFSR", "MemManage Fault Status Register", 0xE000ED28, 1, [
             FieldBitfield("IACCVIOL", 0, 1),
             FieldBitfield("DACCVIOL", 1, 1),
@@ -150,27 +156,15 @@ class ArmToolsSCB (gdb.Command):
     ]
 
     def __init__(self):
-        super().__init__('arm scb', gdb.COMMAND_USER)
-        self.parser = argparse.ArgumentParser(
-            description="Inspect SCB - System Control Block"
-        )
-        self.parser.add_argument(
-            '-d', '--descr',
-            dest='descr',
-            action='store_const',
-            const=True,
-            default=False,
-            help="Include description"
-        )
+        super().__init__('arm scb', gdb.COMMAND_DATA)
+        self.add_mod('h', 'descr')
 
     def invoke(self, argument, from_tty):
-        argv = gdb.string_to_argv(argument)
-        try:
-            args = self.parser.parse_args(argv)
-        except SystemExit:
-            # We're running argparse in gdb, don't exit just return
+        args = self.process_args(argument)
+        if args is None:
+            self.print_help()
             return
 
         inf = gdb.selected_inferior()
         for reg in self.regs:
-            reg.dump(inf, args.descr)
+            reg.dump(inf, args['descr'])
