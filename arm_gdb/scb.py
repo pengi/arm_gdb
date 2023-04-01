@@ -29,9 +29,10 @@ from .common import *
 class ArmToolsSCB (ArgCommand):
     """Dump of ARM Cortex-M SCB - System Control Block
 
-Usage: arm scb [/h]
+Usage: arm scb [/hb]
 
 Modifier /h provides descriptions of names where available
+Modifier /b prints bitmasks in binary instead of hex
 """
 
     # https://developer.arm.com/documentation/dui0552/a/cortex-m3-peripherals/system-control-block
@@ -158,6 +159,7 @@ Modifier /h provides descriptions of names where available
     def __init__(self):
         super().__init__('arm scb', gdb.COMMAND_DATA)
         self.add_mod('h', 'descr')
+        self.add_mod('b', 'binary')
 
     def invoke(self, argument, from_tty):
         args = self.process_args(argument)
@@ -165,6 +167,8 @@ Modifier /h provides descriptions of names where available
             self.print_help()
             return
 
+        base = 1 if args['binary'] else 4
+
         inf = gdb.selected_inferior()
         for reg in self.regs:
-            reg.dump(inf, args['descr'])
+            reg.dump(inf, args['descr'], base=base)

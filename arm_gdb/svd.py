@@ -63,7 +63,7 @@ class PeripheralsArgType(ArgType):
 
 class ArmToolsSVDList (ArgCommand):
     """List peripherals and registers from device
-    
+
 Usage: arm list
 
 Lists loaded devices
@@ -133,9 +133,10 @@ Examples:
 class ArmToolsSVDInspect (ArgCommand):
     """Dump register values from device peripheral
 
-Usage: arm inspect /h <device> <peripheral>
+Usage: arm inspect [/hb] <device> <peripheral>
 
 Modifier /h provides descriptions of names where available
+Modifier /b prints bitmasks in binary instead of hex
 
     <device>     - Name of loaded device. See `help arm loadfile`
     <peripheral> - Name of peripheral
@@ -148,12 +149,15 @@ Exmaple: arm inspect nrf52840 UARTE0
         self.add_arg(DevicesArgType('device'))
         self.add_arg(PeripheralsArgType('peripheral', 'device'))
         self.add_mod('h', 'descr')
+        self.add_mod('b', 'binary')
 
     def invoke(self, argument, from_tty):
         args = self.process_args(argument)
         if args is None:
             self.print_help()
             return
+
+        base = 1 if args['binary'] else 4
 
         peripheral = args['peripheral']
 
@@ -187,7 +191,7 @@ Exmaple: arm inspect nrf52840 UARTE0
                 4,
                 fields
             )
-            reg.dump(inf, args['descr'])
+            reg.dump(inf, args['descr'], base=base)
 
 
 class ArmToolsSVDLoadFile (ArgCommand):

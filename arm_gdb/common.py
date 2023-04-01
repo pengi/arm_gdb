@@ -22,16 +22,12 @@
 # SOFTWARE.
 
 import gdb
+from .lib import *
 
 
 def read_reg(inf, addr, len):
     bs = inf.read_memory(addr, len).tobytes()
     return sum(v << (8*i) for i, v in enumerate(bs))
-
-
-def format_int(val, bits):
-    chars = (bits + 3) // 4
-    return (("0" * chars) + ("%x" % (val,)))[-chars:]
 
 
 class ArgType:
@@ -137,7 +133,7 @@ class RegisterDef:
         self.size = size
         self.fields = fields
 
-    def dump(self, inf, include_descr=True):
+    def dump(self, inf, include_descr=True, base=4):
         m_int = read_reg(inf, self.addr, self.size)
 
         if self.descr and include_descr:
@@ -145,13 +141,14 @@ class RegisterDef:
         else:
             descr = ""
 
-        print("%-32s = %8s %s" %
-              (self.name, format_int(m_int, self.size * 8), descr)
+        field_align = "%%%ds" % (32//base)
+        print(("%-32s = "+field_align+" %s") %
+              (self.name, format_int(m_int, self.size * 8, base=base), descr)
               )
 
         for field in self.fields:
             if field.should_print(m_int):
-                field.print(m_int, include_descr)
+                field.print(m_int, include_descr, base=base)
 
 
 class Field:
@@ -162,27 +159,28 @@ class Field:
     def should_print(self, value):
         return False
 
-    def get_bitmask(self, value):
+    def get_value(self, value):
         return 0
+
+    def get_print_bits(self, value, base=4):
+        return format_int(value, 32, 0, 0, base)
 
     def get_print_value(self, value):
         return None
 
-    def print(self, value, include_descr=True):
-        bitmask = self.get_bitmask(value)
-        print_value = self.get_print_value(value)
-
+    def print(self, value, include_descr=True, base=4):
         if self.descr and include_descr:
             descr = (" // " + self.descr)
         else:
             descr = ""
 
+        field_align = "%%%ds" % (32//base)
         print(
-            "    %-28s   %8s - %-15s%s" %
+            ("    %-28s   "+field_align+" - %-15s%s") %
             (
                 self.name,
-                format_int(bitmask, 32),
-                print_value,
+                self.get_print_bits(value, base=base),
+                self.get_print_value(value),
                 descr
             )
         )
@@ -194,17 +192,17 @@ class FieldBitfield(Field):
         self.bit_offset = bit_offset
         self.bit_width = bit_width
 
-    def get_bitmask(self, value):
-        return value & (((1 << self.bit_width)-1) << self.bit_offset)
+    def should_print(self, value):
+        return self.get_value(value) != 0
 
     def get_value(self, value):
         return (value >> self.bit_offset) & ((1 << self.bit_width)-1)
 
+    def get_print_bits(self, value, base=4):
+        return format_int(value, 32, self.bit_offset, self.bit_width, base)
+
     def get_print_value(self, value):
         return format_int(self.get_value(value), self.bit_width)
-
-    def should_print(self, value):
-        return self.get_value(value) != 0
 
 
 class FieldBitfieldEnum(FieldBitfield):
