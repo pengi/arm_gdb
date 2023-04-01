@@ -133,7 +133,7 @@ class RegisterDef:
         self.size = size
         self.fields = fields
 
-    def dump(self, inf, include_descr=True, base=4):
+    def dump(self, inf, include_descr=True, base=4, all=False):
         m_int = read_reg(inf, self.addr, self.size)
 
         if self.descr and include_descr:
@@ -147,14 +147,15 @@ class RegisterDef:
               )
 
         for field in self.fields:
-            if field.should_print(m_int):
+            if all or field.should_print(m_int):
                 field.print(m_int, include_descr, base=base)
 
 
 class Field:
-    def __init__(self, name, descr=None):
+    def __init__(self, name, descr=None, always=False):
         self.name = name
         self.descr = descr
+        self.always = always
 
     def should_print(self, value):
         return False
@@ -187,13 +188,13 @@ class Field:
 
 
 class FieldBitfield(Field):
-    def __init__(self, name, bit_offset, bit_width, descr=None):
-        super().__init__(name, descr)
+    def __init__(self, name, bit_offset, bit_width, descr=None, always=False):
+        super().__init__(name, descr, always=always)
         self.bit_offset = bit_offset
         self.bit_width = bit_width
 
     def should_print(self, value):
-        return self.get_value(value) != 0
+        return self.always or self.get_value(value) != 0
 
     def get_value(self, value):
         return (value >> self.bit_offset) & ((1 << self.bit_width)-1)
@@ -206,8 +207,8 @@ class FieldBitfield(Field):
 
 
 class FieldBitfieldEnum(FieldBitfield):
-    def __init__(self, name, bit_offset, bit_width, enum_values, descr=None):
-        super().__init__(name, bit_offset, bit_width, descr)
+    def __init__(self, name, bit_offset, bit_width, enum_values, descr=None, always=False):
+        super().__init__(name, bit_offset, bit_width, descr, always=always)
         self.enum_values = enum_values
 
     def get_enum_value(self, value):
@@ -225,6 +226,8 @@ class FieldBitfieldEnum(FieldBitfield):
             return format_int(self.get_value(value), self.bit_width)
 
     def should_print(self, value):
+        if self.always:
+            return True
         try:
             v, is_default, name, descr = self.get_enum_value(value)
             return not is_default
@@ -233,6 +236,6 @@ class FieldBitfieldEnum(FieldBitfield):
 
 
 class FieldBit(FieldBitfield):
-    def __init__(self, name, bit, descr=None):
-        super().__init__(name, bit, 1, descr)
+    def __init__(self, name, bit, descr=None, always=False):
+        super().__init__(name, bit, 1, descr, always=always)
         self.bit = bit

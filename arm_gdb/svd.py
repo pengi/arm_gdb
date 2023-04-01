@@ -133,9 +133,10 @@ Examples:
 class ArmToolsSVDInspect (ArgCommand):
     """Dump register values from device peripheral
 
-Usage: arm inspect [/hb] <device> <peripheral>
+Usage: arm inspect [/hab] <device> <peripheral>
 
 Modifier /h provides descriptions of names where available
+Modifier /a Print all fields, including default values
 Modifier /b prints bitmasks in binary instead of hex
 
     <device>     - Name of loaded device. See `help arm loadfile`
@@ -149,6 +150,7 @@ Exmaple: arm inspect nrf52840 UARTE0
         self.add_arg(DevicesArgType('device'))
         self.add_arg(PeripheralsArgType('peripheral', 'device'))
         self.add_mod('h', 'descr')
+        self.add_mod('a', 'all')
         self.add_mod('b', 'binary')
 
     def invoke(self, argument, from_tty):
@@ -191,7 +193,7 @@ Exmaple: arm inspect nrf52840 UARTE0
                 4,
                 fields
             )
-            reg.dump(inf, args['descr'], base=base)
+            reg.dump(inf, args['descr'], base=base, all=args['all'])
 
 
 class ArmToolsSVDLoadFile (ArgCommand):

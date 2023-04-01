@@ -29,9 +29,10 @@ from .common import *
 class ArmToolsSCB (ArgCommand):
     """Dump of ARM Cortex-M SCB - System Control Block
 
-Usage: arm scb [/hb]
+Usage: arm scb [/hab]
 
 Modifier /h provides descriptions of names where available
+Modifier /a Print all fields, including default values
 Modifier /b prints bitmasks in binary instead of hex
 """
 
@@ -118,36 +119,34 @@ Modifier /b prints bitmasks in binary instead of hex
             FieldBitfield("BUSFAULTENA", 17, 1),
             FieldBitfield("USGFAULTENA", 18, 1),
         ]),
-        RegisterDef("CFSR", "Configurable Fault Status Register",
-                    0xE000ED28, 4),
-        RegisterDef("MMFSR", "MemManage Fault Status Register", 0xE000ED28, 1, [
-            FieldBitfield("IACCVIOL", 0, 1),
-            FieldBitfield("DACCVIOL", 1, 1),
-            FieldBitfield("MUNSTKERR", 3, 1),
-            FieldBitfield("MSTKERR", 4, 1),
-            FieldBitfield("MLSPERR", 5, 1),
-            FieldBitfield("MMARVALID", 7, 1)
+        RegisterDef("CFSR", "Configurable Fault Status Register", 0xE000ED28, 4, [
+            FieldBitfield("MMFSR",       0,    8,
+                          "MemManage Fault Status Register", always=True),
+            FieldBitfield("IACCVIOL",    0+0,  1),
+            FieldBitfield("DACCVIOL",    1+0,  1),
+            FieldBitfield("MUNSTKERR",   3+0,  1),
+            FieldBitfield("MSTKERR",     4+0,  1),
+            FieldBitfield("MLSPERR",     5+0,  1),
+            FieldBitfield("MMARVALID",   7+0,  1),
+            FieldBitfield("BFSR",        8,    8, "BusFault Status Register", always=True),
+            FieldBitfield("IBUSERR",     0+8,  1),
+            FieldBitfield("PRECISERR",   1+8,  1),
+            FieldBitfield("IMPRECISERR", 2+8,  1),
+            FieldBitfield("UNSTKERR",    3+8,  1),
+            FieldBitfield("STKERR",      4+8,  1),
+            FieldBitfield("LSPERR",      5+8,  1),
+            FieldBitfield("BFARVALID",   7+8,  1),
+            FieldBitfield("UFSR",        16,  16, "BusFault Status Register", always=True),
+            FieldBitfield("UNDEFINSTR",  0+16, 1),
+            FieldBitfield("INVSTATE",    1+16, 1),
+            FieldBitfield("INVPC",       2+16, 1),
+            FieldBitfield("NOCP",        3+16, 1),
+            FieldBitfield("UNALIGNED",   8+16, 1),
+            FieldBitfield("DIVBYZERO",   9+16, 1)
         ]),
         RegisterDef("MMFAR", "MemManage Fault Address Register",
                     0xE000ED34, 4),
-        RegisterDef("BFSR", "BusFault Status Register", 0xE000ED29, 1, [
-            FieldBitfield("IBUSERR", 0, 1),
-            FieldBitfield("PRECISERR", 1, 1),
-            FieldBitfield("IMPRECISERR", 2, 1),
-            FieldBitfield("UNSTKERR", 3, 1),
-            FieldBitfield("STKERR", 4, 1),
-            FieldBitfield("LSPERR", 5, 1),
-            FieldBitfield("BFARVALID", 7, 1)
-        ]),
         RegisterDef("BFAR", "BusFault Address Register", 0xE000ED38, 4),
-        RegisterDef("UFSR", "UsageFault Status Register", 0xE000ED2A, 2, [
-            FieldBitfield("UNDEFINSTR", 0, 1),
-            FieldBitfield("INVSTATE", 1, 1),
-            FieldBitfield("INVPC", 2, 1),
-            FieldBitfield("NOCP", 3, 1),
-            FieldBitfield("UNALIGNED", 8, 1),
-            FieldBitfield("DIVBYZERO", 9, 1)
-        ]),
         RegisterDef("HFSR", "HardFault Status Register", 0xE000ED2C, 4, [
             FieldBitfield("VECTTBL", 1, 1),
             FieldBitfield("FORCED", 30, 1),
@@ -159,6 +158,7 @@ Modifier /b prints bitmasks in binary instead of hex
     def __init__(self):
         super().__init__('arm scb', gdb.COMMAND_DATA)
         self.add_mod('h', 'descr')
+        self.add_mod('a', 'all')
         self.add_mod('b', 'binary')
 
     def invoke(self, argument, from_tty):
@@ -171,4 +171,4 @@ Modifier /b prints bitmasks in binary instead of hex
 
         inf = gdb.selected_inferior()
         for reg in self.regs:
-            reg.dump(inf, args['descr'], base=base)
+            reg.dump(inf, args['descr'], base=base, all=args['all'])

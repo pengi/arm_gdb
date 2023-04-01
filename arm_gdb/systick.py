@@ -29,9 +29,10 @@ from .common import *
 class ArmToolsSysTick (ArgCommand):
     """Dump of ARM Cortex-M SysTick block
 
-Usage: arm systick [/hb]
+Usage: arm systick [/hab]
 
 Modifier /h provides descriptions of names where available
+Modifier /a Print all fields, including default values
 Modifier /b prints bitmasks in binary instead of hex
 """
 
@@ -59,6 +60,7 @@ Modifier /b prints bitmasks in binary instead of hex
     def __init__(self):
         super().__init__('arm systick', gdb.COMMAND_DATA)
         self.add_mod('h', 'descr')
+        self.add_mod('a', 'all')
         self.add_mod('b', 'binary')
 
     def invoke(self, argument, from_tty):
@@ -71,4 +73,4 @@ Modifier /b prints bitmasks in binary instead of hex
 
         inf = gdb.selected_inferior()
         for reg in self.regs:
-            reg.dump(inf, args['descr'], base=base)
+            reg.dump(inf, args['descr'], base=base, all=args['all'])

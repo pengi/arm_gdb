@@ -25,6 +25,30 @@ python import arm_gdb
 
 Or add that line to `~/.gdbinit`
 
+Usage
+-----
+
+Use `help arm` command, or individual subcommands, i.e. `help arm scb`
+```
+(gdb) help arm
+Tools for debugging ARM Cortex-M - series CPUs
+
+List of arm subcommands:
+
+arm inspect -- Dump register values from device peripheral
+arm list -- List peripherals and registers from device
+arm loaddb -- Load an SVD file from resitry
+arm loadfile -- Load an SVD file from file
+arm nvic -- Print current status of NVIC
+arm scb -- Dump of ARM Cortex-M SCB - System Control Block
+arm systick -- Dump of ARM Cortex-M SysTick block
+
+Type "help arm" followed by arm subcommand name for full documentation.
+Type "apropos word" to search for commands related to "word".
+Type "apropos -v word" for full documentation of commands related to "word".
+Command name abbreviations are allowed if unambiguous.
+```
+
 Exmaples
 --------
 
@@ -96,6 +120,24 @@ SYST_CSR                         = 00000000000000000000000000000100
 SYST_RVR                         = 00000000000000000000000000000000
 SYST_CVR                         = 00000000000000000000000000000000
 SYST_CALIB                       = 11000000000000000000000000000000
+    SKEW                           .1.............................. - 1
+    NOREF                          1............................... - 1
+```
+
+Print out all fields, even those with default values:
+```
+(gdb) arm systick /ab
+SYST_CSR                         = 00000000000000000000000000000100
+    ENABLE                         ...............................0 - 0
+    TICKINT                        ..............................0. - 0
+    CLKSOURCE                      .............................1.. - 1
+    COUNTFLAG                      ...............0................ - 0
+SYST_RVR                         = 00000000000000000000000000000000
+    RELOAD                         ........000000000000000000000000 - 000000
+SYST_CVR                         = 00000000000000000000000000000000
+    CURRENT                        ........000000000000000000000000 - 000000
+SYST_CALIB                       = 11000000000000000000000000000000
+    TENMS                          .......0000000000000000000000000 - 0000000
     SKEW                           .1.............................. - 1
     NOREF                          1............................... - 1
 ```
