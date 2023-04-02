@@ -459,9 +459,6 @@ def get_fpu_regs():
             ], "Floating Point half-precision and double-precision. Indicates whether the FP extension implements half-precision and double-precision floating-point conversion instructions."),
             FieldBitfieldEnum("D_NaN mode",  4, 4, [
                 (0b0000, True, "Not supported", None),
-                (0b0001, False, "Supported", None)
-            ], [
-                (0b0000, True, "Not supported", None),
                 (0b0001, False, "Hardware supports propagation of NaN values.", None),
             ], "Indicates whether the FP hardware implementation supports only the Default NaN mode."),
             FieldBitfieldEnum("FtZ mode",  0, 4, [
