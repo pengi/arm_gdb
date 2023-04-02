@@ -86,4 +86,4 @@ def format_int(val, bits, bit_offset=0, bit_length=None, base=4):
 
 if __name__ == "__main__":
     import doctest
-    doctest.testmod()
+    doctest.testmod(verbose=True)
