@@ -27,7 +27,7 @@ from . import systick
 from . import nvic
 from . import svd
 
-__version__ = '0.9.4'
+__version__ = '0.9.5'
 
 class ArmTools (gdb.Command):
     """Tools for debugging ARM Cortex-M - series CPUs"""
