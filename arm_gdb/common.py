@@ -235,6 +235,14 @@ class FieldBitfieldEnum(FieldBitfield):
             return True
 
 
+class FieldBitfieldMap(FieldBitfield):
+    def __init__(self, name, bit_offset, bit_width, map_func, descr=None, always=False):
+        super().__init__(name, bit_offset, bit_width, descr, always=always)
+        self.map_func = map_func
+
+    def get_print_value(self, value):
+        return self.map_func(self.get_value(value))
+
 class FieldBit(FieldBitfield):
     def __init__(self, name, bit, descr=None, always=False):
         super().__init__(name, bit, 1, descr, always=always)

@@ -29,19 +29,18 @@ from .common import *
 class ArmToolsNVIC (ArgCommand):
     """Print current status of NVIC
 
-Usage: arm nvic [/a] [<number of IRQs>] [<ISR vector address>]
+Usage: arm nvic [/a] [<ISR vector address>]
 
 Modifier /a lists all interrupt vectors, not only enabled
-    <count>              - optional. Number of ISRs to list. Defaults to 240
     <ISR vector address> - optional. Specifies base address of ISR vector.
                            If not specified, it will be resolved via SCB->VTOR,
                            which is valid in most cases.
 
 Examples:
-    arm nvic /a 64            - list all ISRs from -15 to 63
-    arm nvic 80 &__isr_vector - Custom ISR vector, useful when proxying
-                                interrupts via another system, like the
-                                softdevice on nRF52
+    arm nvic /a            - list all ISRs from -15 to to maximum
+    arm nvic &__isr_vector - Custom ISR vector, useful when proxying
+                            interrupts via another system, like the
+                            softdevice on nRF52
 """
 
     # Numbers represents bit numbers in control regiters for:
@@ -73,7 +72,6 @@ Examples:
     def __init__(self):
         super().__init__('arm nvic', gdb.COMMAND_USER)
         self.add_mod('a', 'all')
-        self.add_arg(ArgType('count', gdb.COMPLETE_EXPRESSION, optional=True))
         self.add_arg(ArgType('vtor', gdb.COMPLETE_EXPRESSION, optional=True))
 
     def get_bit(self, IRQn, REG):
@@ -94,10 +92,10 @@ Examples:
             VTOR = read_reg(inf, 0xE000ED08, 4)
             STIR = read_reg(inf, 0xE000E010, 4)
 
-        if 'count' in args:
-            count = gdb.parse_and_eval(args['count'])
-        else:
-            count = 240
+        ICTR = read_reg(inf, 0xE000E004, 4)
+        count = 32 * (1+(ICTR & 0x0000000f))
+        if count > 496:
+            count = 496
 
         # Maskable handlers
         SHPR = [read_reg(inf, 0xE000ED18 + 4*i, 4) for i in range(3)]

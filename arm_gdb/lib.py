@@ -83,6 +83,17 @@ def format_int(val, bits, bit_offset=0, bit_length=None, base=4):
     # replace all digits in val_str that's zero in mask
     return "".join('.' if m == '0' else v for v, m in zip(val_str, mask_str))
 
+def filt(model, l):
+    return [
+        v
+        for m, v in l
+        if (
+            model is None or
+            m is None or
+            m.split(",").count(model) > 0
+        )
+    ]
+
 
 if __name__ == "__main__":
     import doctest

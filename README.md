@@ -29,12 +29,14 @@ Usage
 -----
 
 Use `help arm` command, or individual subcommands, i.e. `help arm scb`
+
 ```
 (gdb) help arm
 Tools for debugging ARM Cortex-M - series CPUs
 
 List of arm subcommands:
 
+arm fpu -- Dump of ARM Cortex-M FPU - SCB registers for the FP extension
 arm inspect -- Dump register values from device peripheral
 arm list -- List peripherals and registers from device
 arm loaddb -- Load an SVD file from resitry
@@ -49,45 +51,77 @@ Type "apropos -v word" for full documentation of commands related to "word".
 Command name abbreviations are allowed if unambiguous.
 ```
 
-Exmaples
---------
+System Control Block
+--------------------
+
+```
+(gdb) help arm scb
+Dump of ARM Cortex-M SCB - System Control Block
+
+Usage: arm scb [/habf]
+
+Modifier /h provides descriptions of names where available
+Modifier /a Print all fields, including default values
+Modifier /b prints bitmasks in binary instead of hex
+Modifier /f force printing fields from all Cortex-M models
+```
 
 Dump of ARM System Control Block, with bitmask descriptions
 ```
 (gdb) arm scb /h
-ACTLR                            = 00000000                   // Auxiliary Control Register
+SCB for model M4
+
+SCB registers:
 CPUID                            = 410fc241                   // CPUID Base Register
+    Implementer                    41...... - ARM             // Implementer code assigned by Arm
+    Architecture                   ...f.... - f               // constant - 1111
+    PartNo                         ....c24. - Cortex-M4
     Revision                       .......1 - 1
-    PartNo                         ....c24. - c24
-    Constant                       ...f.... - f
-    Implementer                    41...... - 41
-ICSR                             = 00c21000                   // Interrupt Control and State Register
-    VECTPENDING                    ...21... - 21
-    ISRPENDING                     ..4..... - 1
-    Reserved for Debug use         ..8..... - 1
+ICSR                             = 00000000                   // Interrupt Control and State Register
 VTOR                             = 00000000                   // Vector Table Offset Register
 AIRCR                            = fa050000                   // Application Interrupt and Reset Control Register
-    VECTKEY                        fa05.... - fa05
+    ENDIANNESS                     ....0... - Little Endian
 SCR                              = 00000000                   // System Control Register
 CCR                              = 00000200                   // Configuration and Control Register
-    STKALIGN                       .....2.. - 1
 SHPR1                            = 00000000                   // System Handler Priority Register 1
 SHPR2                            = 80000000                   // System Handler Priority Register 2
-    PRI_11 - SVCall                80...... - 80
+    PRI_11 - SVCall                80...... - 80              // Priority of system handler 11, SVCall.
 SHPR3                            = 00e00000                   // System Handler Priority Register 3
-    PRI_14 - PendSV                ..e0.... - e0
-SHCRS                            = 00070000                   // System Handler Control and State Register
-    MEMFAULTENA                    ...1.... - 1
-    BUSFAULTENA                    ...2.... - 1
-    USGFAULTENA                    ...4.... - 1
+    PRI_14 - PendSV                ..e0.... - e0              // Priority of system handler 14, PendSV.
+SHCSR                            = 00070000                   // System Handler Control and State Register
+    USGFAULTENA                    ...4.... - 1               // Indicates if UsageFault is enabled.
+    BUSFAULTENA                    ...2.... - 1               // Indicates if BusFault is enabled.
+    MEMFAULTENA                    ...1.... - 1               // Indicates if MemFault is enabled.
 CFSR                             = 00000000                   // Configurable Fault Status Register
-MMFSR                            =       00                   // MemManage Fault Status Register
-MMFAR                            = e000edf8                   // MemManage Fault Address Register
-BFSR                             =       00                   // BusFault Status Register
-BFAR                             = e000edf8                   // BusFault Address Register
-UFSR                             =     0000                   // UsageFault Status Register
+    MMFSR                          ......00 - 00              // MemManage Fault Status Register
+    BFSR                           ....00.. - 00              // BusFault Status Register
+    UFSR                           0000.... - 0000            // UsageFault Status Register
 HFSR                             = 00000000                   // HardFault Status Register
+DFSR                             = 00000001                   // Debug Fault Status Register
+    HALTED                         .......1 - Halt request debug event // Indicates a debug event generated by either C_HALT, C_STEP or DEMCR.MON_STEP
+MMFAR                            = e000edf8                   // MemManage Fault Address Register
+BFAR                             = e000edf8                   // BusFault Address Register
 AFSR                             = 00000000                   // Auxiliary Fault Status Register
+CPACR                            = 00f00000                   // Coprocessor Access Control Register
+
+AUX registers:
+ICTR                             = 00000001                   // Interrupt Controller Type Register
+    INTLINESNUM                    .......1 - 64 vectors      // The total number of interrupt lines supported, as 32*(1+N)
+ACTLR - M4                       = 00000000                   // Auxiliary Control Register - Cortex M4
+```
+
+SysTick
+-------
+
+```
+(gdb) help arm systick
+Dump of ARM Cortex-M SysTick block
+
+Usage: arm systick [/hab]
+
+Modifier /h provides descriptions of names where available
+Modifier /a Print all fields, including default values
+Modifier /b prints bitmasks in binary instead of hex
 ```
 
 Dump of ARM SysTick
@@ -142,15 +176,89 @@ SYST_CALIB                       = 11000000000000000000000000000000
     NOREF                          1............................... - 1
 ```
 
+FPU
+---
+
+```
+(gdb) help arm fpu
+Dump of ARM Cortex-M FPU - SCB registers for the FP extension
+
+Usage: arm fpu [/hab]
+
+Modifier /h provides descriptions of names where available
+Modifier /a Print all fields, including default values
+Modifier /b prints bitmasks in binary instead of hex
+```
+
+```
+(gdb) arm fpu/ab
+SCB FP registers:
+FPCCR                            = 11000000000000000000000000000000
+    ASPEN                          1............................... - 1
+    LSPEN                          .1.............................. - 1
+    MONRDY                         .......................0........ - 0
+    BFRDY                          .........................0...... - 0
+    MMRDY                          ..........................0..... - 0
+    HFRDY                          ...........................0.... - 0
+    THREAD                         ............................0... - 0
+    USER                           ..............................0. - 0
+    LSPACT                         ...............................0 - 0
+FPCAR                            = 00000000000000000000000000000000
+    FPCAR                          ..0000000000000000000000000000.. - 0000000
+FPDSCR                           = 00000000000000000000000000000000
+    AHP                            .....0.......................... - 0
+    DN                             ......0......................... - 0
+    FZ                             .......0........................ - 0
+    RMode                          ........00...................... - 0
+MVFR0                            = 00010000000100010000000000100001
+    FP rounding modes              0001............................ - All rounding modes supported.
+    Short vectors                  ....0000........................ - Not supported
+    Square root                    ........0001.................... - Supported
+    Divide                         ............0001................ - Supported
+    FP exception trapping          ................0000............ - Not supported
+    Double-precision               ....................0000........ - Not supported
+    Single-precision               ........................0010.... - Supported.
+    A_SIMD registers               ............................0001 - Supported, 16 x 64-bit registers.
+MVFR1                            = 00010001000000000000000000010001
+    FP fused MAC                   0001............................ - Supported
+    FP HPFP                        ....0001........................ - Supported half-single
+    D_NaN mode                     ........................0001.... - Supported
+    FtZ mode                       ............................0001 - Hardware supports full denormalized number arithmetic.
+MVFR2                            = 00000000000000000000000000000000
+    VFP_Misc                       ........................0000.... - No support for miscellaneous features.
+```
+
+
+NVIC - Nested Vectored Interrupt Controller
+-------------------------------------------
+
 Dump of NVIC list, listing all enabled interrupt handlers, in a redirected
 interrupt vector
+
+```
+(gdb) help arm nvic
+Print current status of NVIC
+
+Usage: arm nvic [/a] [<ISR vector address>]
+
+Modifier /a lists all interrupt vectors, not only enabled
+    <ISR vector address> - optional. Specifies base address of ISR vector.
+                           If not specified, it will be resolved via SCB->VTOR,
+                           which is valid in most cases.
+
+Examples:
+    arm nvic /a            - list all ISRs from -15 to to maximum
+    arm nvic &__isr_vector - Custom ISR vector, useful when proxying
+                            interrupts via another system, like the
+                            softdevice on nRF52
+```
 
 Default, it checks for functions in the active interrupt vector given VTOR
 register. But in for example nRF52840 using their SoftDevice, the interrupts are
 forwarded in software to the application for SoftDevice to override.
 
 ```
-(gdb) arm nvic 80 &__isr_vector
+(gdb) arm nvic &__isr_vector
 IRQn Prio          Handler
  -15    0 en          0002a749 Reset      -
  -14    0 en          0002a771 NMI        -
@@ -171,14 +279,90 @@ IRQn Prio          Handler
   32   20 en          0002a783 -
 ```
 
+SVD - Implementation specific peripherals
+-----------------------------------------
+
+```
+(gdb) help arm inspect
+Dump register values from device peripheral
+
+Usage: arm inspect [/hab] <device> <peripheral>
+
+Modifier /h provides descriptions of names where available
+Modifier /a Print all fields, including default values
+Modifier /b prints bitmasks in binary instead of hex
+
+    <device>     - Name of loaded device. See `help arm loadfile`
+    <peripheral> - Name of peripheral
+
+Exmaple: arm inspect nrf52840 UARTE0
+```
+
+```
+(gdb) help arm loaddb
+Load an SVD file from resitry
+
+Usage: arm loaddb <device> <vendor> <filename>
+
+    <device>    - Name to refer to the device in commands like `arm inspect`
+    <vendor>    - Device vendor
+    <filename>  - SVD file within registry
+
+Load file from cmsis-svd package registry. Many common devices are available. If
+not available, you can load a custom svd file using `arm loadfile`
+
+This command can preferrably be added to .gdbinit for easy access of devices
+```
+
+```
+(gdb) help arm loadfile
+Load an SVD file from file
+
+Usage: arm loadfile <device> <filename>
+
+    <device>    - Name to refer to the device in commands like `arm inspect`
+    <filename>  - SVD file to load
+
+This command can preferrably be added to .gdbinit for easy access of devices
+```
+
+```
+(gdb) help arm list
+List peripherals and registers from device
+
+Usage: arm list
+
+Lists loaded devices
+
+Usage: arm list <device>
+
+List peripherals from a device
+
+Usage: arm list <device> <peripheral>
+
+List registers from a peripheral
+
+Examples:
+    arm list
+    arm list nrf52840
+    arm list nrf52840 UARTE0
+```
+
 To use an SVD file from cmsis-svd package database, use:
+```
+(gdb) arm loaddb nrf Nordic nrf52.svd
+```
 
 This loads in the device description under a local name, in this case `nrf` for
 faster access in upcoming commands
 
+It is also possible to load custom svd files, in this case an stm32f7x7:
 ```
-(gdb) arm loaddb nrf52 Nordic nrf52.svd
 (gdb) arm loadfile stm32f7x7 /path/to/my/stm32f7x7.svd
+```
+
+To list peripherals in the loaded module, use:
+```
 (gdb) arm list nrf
 FICR       @ 0x10000000
 UICR       @ 0x10001000

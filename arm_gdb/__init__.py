@@ -41,6 +41,7 @@ class ArmTools (gdb.Command):
 
 ArmTools()
 scb.ArmToolsSCB()
+scb.ArmToolsFPU()
 systick.ArmToolsSysTick()
 nvic.ArmToolsNVIC()
 svd.ArmToolsSVDList()
