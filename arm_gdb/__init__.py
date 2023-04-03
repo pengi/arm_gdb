@@ -23,6 +23,7 @@
 
 import gdb
 from . import scb
+from . import fpu
 from . import systick
 from . import nvic
 from . import svd
@@ -41,7 +42,7 @@ class ArmTools (gdb.Command):
 
 ArmTools()
 scb.ArmToolsSCB()
-scb.ArmToolsFPU()
+fpu.ArmToolsFPU()
 systick.ArmToolsSysTick()
 nvic.ArmToolsNVIC()
 svd.ArmToolsSVDList()
