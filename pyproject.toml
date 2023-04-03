@@ -18,7 +18,7 @@ readme = "README.md"
 authors = [{ name = "Max Sikström", email = "max@pengi.se" }]
 license = { file = 'LICENSE' }
 
-dependencies = ["argparse >= 1.1", "cmsis-svd >= 0.4"]
+dependencies = ["cmsis-svd >= 0.4"]
 requires-python = ">=3.6"
 
 [project.urls]

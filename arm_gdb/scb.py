@@ -22,7 +22,6 @@
 # SOFTWARE.
 
 import gdb
-import argparse
 from .common import *
 import traceback
 

@@ -22,7 +22,6 @@
 # SOFTWARE.
 
 import gdb
-import argparse
 from .common import *
 
 from cmsis_svd.parser import SVDParser
