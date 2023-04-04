@@ -83,14 +83,36 @@ def format_int(val, bits, bit_offset=0, bit_length=None, base=4):
     # replace all digits in val_str that's zero in mask
     return "".join('.' if m == '0' else v for v, m in zip(val_str, mask_str))
 
-def filt(model, l):
+
+def filt(tags, list):
+    """
+    Filter elements of a list based on version tags. Each element in the list
+    is a tuple where first field is a comma separated list of tags, second field
+    is the value.
+
+    The tags argument is a set of tags as strings of which elements should be
+    kept
+
+    If either tags is None or the first element in the tuple is None, then the
+    element will be included
+
+    >>> filt({'a', 'x'}, [(None, 'x'), ('a,b', 'y')])
+    ['x', 'y']
+
+    >>> filt({'c', 'x'}, [(None, 'x'), ('a,b', 'y')])
+    ['x']
+
+    >>> filt(None, [(None, 'x'), ('a,b', 'y')])
+    ['x', 'y']
+    """
+
     return [
         v
-        for m, v in l
+        for m, v in list
         if (
-            model is None or
+            tags is None or
             m is None or
-            len(set(m.split(","))&model) > 0
+            len(set(m.split(",")) & tags) > 0
         )
     ]
 
