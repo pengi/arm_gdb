@@ -91,6 +91,9 @@ Examples:
             VTOR = read_reg(inf, 0xE000ED08, 4)
             STIR = read_reg(inf, 0xE000E010, 4)
 
+        # TODO: ARMv6-M only supports 32 interrupts and no ICTR register.
+        # Assume for now that ICTR reads 0 on ARMv6, which matches count=32, but
+        # should probably be checked against CPUID instead, which is defined
         ICTR = read_reg(inf, 0xE000E004, 4)
         count = 32 * (1+(ICTR & 0x0000000f))
         if count > 496:
@@ -105,12 +108,15 @@ Examples:
             read_reg(inf, 0xE000E010, 4),  # SYST_CSR
         ]
 
-        NVIC_ISER = [read_reg(inf, 0xE000E100 + 4*i, 4) for i in range(8)]
-        # NVIC_ICER = [read_reg(inf, 0XE000E180 + 4*i, 4) for i in range(8)]
-        NVIC_ISPR = [read_reg(inf, 0XE000E200 + 4*i, 4) for i in range(8)]
-        # NVIC_ICPR = [read_reg(inf, 0XE000E280 + 4*i, 4) for i in range(8)]
-        NVIC_IABR = [read_reg(inf, 0xE000E300 + 4*i, 4) for i in range(8)]
-        NVIC_IPR = [read_reg(inf, 0xE000E400 + 4*i, 4) for i in range(60)]
+        reg_count = (count + 31) // 32
+        prioreg_count = (count + 3) // 4
+
+        NVIC_ISER = [read_reg(inf, 0xE000E100 + 4*i, 4) for i in range(reg_count)]
+        # NVIC_ICER = [read_reg(inf, 0XE000E180 + 4*i, 4) for i in range(reg_count)]
+        NVIC_ISPR = [read_reg(inf, 0XE000E200 + 4*i, 4) for i in range(reg_count)]
+        # NVIC_ICPR = [read_reg(inf, 0XE000E280 + 4*i, 4) for i in range(reg_count)]
+        NVIC_IABR = [read_reg(inf, 0xE000E300 + 4*i, 4) for i in range(reg_count)]
+        NVIC_IPR = [read_reg(inf, 0xE000E400 + 4*i, 4) for i in range(prioreg_count)]
 
         print("IRQn Prio          Handler")
 

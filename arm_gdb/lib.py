@@ -90,7 +90,7 @@ def filt(model, l):
         if (
             model is None or
             m is None or
-            m.split(",").count(model) > 0
+            len(set(m.split(","))&model) > 0
         )
     ]
 
