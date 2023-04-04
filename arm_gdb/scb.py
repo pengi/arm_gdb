@@ -155,7 +155,7 @@ def get_scb_regs(model):
                 (None, FieldBitfield(
                     "SEVONPEND", 4, 1, "Determines whether an interrupt transition from inactive state to pending state is a wakeup event")),
                 ('v8', FieldBitfield(
-                    "SLEEPDEEPS", 2, 1, "Sleep deep secure. This field controls whether the SLEEPDEEP bit is only accessible from the Secure state.")),
+                    "SLEEPDEEPS", 3, 1, "Sleep deep secure. This field controls whether the SLEEPDEEP bit is only accessible from the Secure state.")),
                 (None, FieldBitfield(
                     "SLEEPDEEP", 2, 1, "Provides a qualifying hint indicating that waking from sleep might take longer")),
                 (None, FieldBitfield(
@@ -322,7 +322,7 @@ def get_scb_regs(model):
                               "Indicates when a fault has occurred because of a vector table read error on exception processing."),
             ])),
             (None, RegisterDef("DFSR", "Debug Fault Status Register", 0xE000ED30, 4, filt(model, [
-                ('v8', FieldBitfieldEnum("PMU", 4, 1, [
+                ('v8', FieldBitfieldEnum("PMU", 5, 1, [
                     (0, True, "PMU event has not occurred.", None),
                     (1, False, "PMU event has occurred.", None),
                 ], "PMU event. Sticky flag indicating whether a PMU counter overflow event has occurred.")),
