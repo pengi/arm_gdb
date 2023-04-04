@@ -1,6 +1,9 @@
 [build-system]
-requires = ["setuptools>=61", "wheel"]
+requires = ["setuptools>=61", "wheel", "setuptools-git-versioning<2"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools-git-versioning]
+enabled = true
 
 [project]
 classifiers = [
@@ -11,8 +14,8 @@ classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
 ]
+dynamic = ["version"]
 name = 'arm-gdb'
-version = '0.9.5'
 description = 'Python module for GDB to analyze ARM core registers'
 readme = "README.md"
 authors = [{ name = "Max Sikström", email = "max@pengi.se" }]
