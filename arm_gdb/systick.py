@@ -38,21 +38,21 @@ Modifier /b prints bitmasks in binary instead of hex
     # https://developer.arm.com/documentation/dui0552/a/cortex-m3-peripherals/system-timer--systick
     regs = [
         RegisterDef("SYST_CSR", "SysTick Control and Status Register", 0xE000E010, 4, [
-            FieldBitfield("ENABLE", 0, 1),
-            FieldBitfield("TICKINT", 1, 1),
+            FieldBitfield("COUNTFLAG", 16, 1),
             FieldBitfield("CLKSOURCE", 2, 1),
-            FieldBitfield("COUNTFLAG", 16, 1)
+            FieldBitfield("TICKINT", 1, 1),
+            FieldBitfield("ENABLE", 0, 1),
         ]),
         RegisterDef("SYST_RVR", "SysTick Reload Value Register", 0xE000E014, 4, [
-            FieldBitfield("RELOAD", 0, 24)
+            FieldBitfield("RELOAD", 0, 24),
         ]),
         RegisterDef("SYST_CVR", "SysTick Current Value Register", 0xE000E018, 4, [
-            FieldBitfield("CURRENT", 0, 24)
+            FieldBitfield("CURRENT", 0, 24),
         ]),
         RegisterDef("SYST_CALIB", "SysTick Calibration Value Register", 0xE000E01C, 4, [
-            FieldBitfield("TENMS", 0, 25),
+            FieldBitfield("NOREF", 31, 1),
             FieldBitfield("SKEW", 30, 1),
-            FieldBitfield("NOREF", 31, 1)
+            FieldBitfield("TENMS", 0, 25),
         ]),
     ]
 
