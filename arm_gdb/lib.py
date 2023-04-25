@@ -124,8 +124,7 @@ def norm_descr(text):
     Replace multiple successive line breaks, tabs and spaces a single space to
     compactify descriptions.
 
-    >>> norm_descr('Hello
-                    World')
+    >>> norm_descr('Hello\\n\\t     World')
     'Hello World'
     """
     return re.sub(r"[\n\r\t ]+", " ", text)
