@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 # Copyright © 2023 Max Sikström
+# Copyright © 2023 Niklas Hauser
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the “Software”), to deal
@@ -60,6 +61,20 @@ class PeripheralsArgType(ArgType):
         return None
 
 
+class RegistersArgType(ArgType):
+    def __init__(self, name, peripheral_arg, optional=False):
+        super().__init__(name, optional=optional)
+        self.peripheral_arg = peripheral_arg
+
+    def complete(self, word, args={}):
+        return [r.name for r in args[self.peripheral_arg].registers
+                if r.name.startswith(word)]
+
+    def get(self, word, args={}):
+        return next((r for r in args[self.peripheral_arg].registers
+                     if r.name == word), None)
+
+
 class ArmToolsSVDList (ArgCommand):
     """List peripherals and registers from device
 
@@ -71,20 +86,22 @@ Usage: arm list <device>
 
 List peripherals from a device
 
-Usage: arm list <device> <peripheral>
+Usage: arm list <device> <peripheral> [<register>]
 
-List registers from a peripheral
+List one or all registers from a peripheral
 
 Examples:
     arm list
     arm list nrf52840
     arm list nrf52840 UARTE0
+    arm list nrf52840 UARTE0 EVENTS_RXDRDY
 """
 
     def __init__(self):
         super().__init__('arm list', gdb.COMMAND_SUPPORT)
         self.add_arg(DevicesArgType('device', optional=True))
         self.add_arg(PeripheralsArgType('peripheral', 'device', optional=True))
+        self.add_arg(RegistersArgType('register', 'peripheral', optional=True))
 
     def invoke(self, argument, from_tty):
         args = self.process_args(argument)
@@ -109,13 +126,25 @@ Examples:
         else:
             device = args['device']
             peripheral = args['peripheral']
-            print(
-                "Registers in %s @ 0x%08x:" % (
-                    peripheral.name,
-                    peripheral.base_address
+            if 'register' in args:
+                registers = [args['register']]
+                print(
+                    "Register %s in %s @ 0x%08x:" % (
+                        registers[0].name,
+                        peripheral.name,
+                        peripheral.base_address
+                    )
                 )
-            )
-            for register in peripheral.registers:
+            else:
+                registers = peripheral.registers
+                print(
+                    "Registers in %s @ 0x%08x:" % (
+                        peripheral.name,
+                        peripheral.base_address
+                    )
+                )
+
+            for register in registers:
                 print(
                     " - %s @ +0x%x" % (
                         register.name,
@@ -132,7 +161,7 @@ Examples:
 class ArmToolsSVDInspect (ArgCommand):
     """Dump register values from device peripheral
 
-Usage: arm inspect [/hab] <device> <peripheral>
+Usage: arm inspect [/hab] <device> <peripheral> [<register>]
 
 Modifier /h provides descriptions of names where available
 Modifier /a Print all fields, including default values
@@ -140,14 +169,18 @@ Modifier /b prints bitmasks in binary instead of hex
 
     <device>     - Name of loaded device. See `help arm loadfile`
     <peripheral> - Name of peripheral
+    <register>   - Name of register (optional)
 
-Exmaple: arm inspect nrf52840 UARTE0
+Examples:
+    arm inspect nrf52840 UARTE0
+    arm inspect nrf52840 UARTE0 EVENTS_RXDRDY
 """
 
     def __init__(self):
         super().__init__('arm inspect', gdb.COMMAND_DATA)
         self.add_arg(DevicesArgType('device'))
         self.add_arg(PeripheralsArgType('peripheral', 'device'))
+        self.add_arg(RegistersArgType('register', 'peripheral', optional=True))
         self.add_mod('h', 'descr')
         self.add_mod('a', 'all')
         self.add_mod('b', 'binary')
@@ -161,10 +194,12 @@ Exmaple: arm inspect nrf52840 UARTE0
         base = 1 if args['binary'] else 4
 
         peripheral = args['peripheral']
+        registers = [args['register']] if 'register' in args \
+                    else peripheral.registers
 
         inf = gdb.selected_inferior()
 
-        for register in peripheral.registers:
+        for register in registers:
             fields = []
             for field in register._fields:
                 if field.is_enumerated_type:
