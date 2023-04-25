@@ -144,14 +144,14 @@ Examples:
                     )
                 )
 
-            for register in registers:
+            for register in sorted(registers, key=lambda r: r.address_offset):
                 print(
                     " - %s @ +0x%x" % (
                         register.name,
                         register.address_offset
                     )
                 )
-                for field in register._fields:
+                for field in sorted(register._fields, key=lambda f: f.bit_offset):
                     mask = "." * (32-field.bit_offset-field.bit_width) + \
                         "#" * field.bit_width + "." * field.bit_offset
 
@@ -199,9 +199,9 @@ Examples:
 
         inf = gdb.selected_inferior()
 
-        for register in registers:
+        for register in sorted(registers, key=lambda r: r.address_offset):
             fields = []
-            for field in register._fields:
+            for field in sorted(register._fields, key=lambda f: f.bit_offset):
                 if field.is_enumerated_type:
                     fields.append(FieldBitfieldEnum(
                         field.name,
