@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 # Copyright © 2023 Max Sikström
+# Copyright © 2023 Niklas Hauser
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the “Software”), to deal
@@ -24,6 +25,8 @@
 #
 # Library functions, that can be tested outside of gdb. used for type
 #
+import re
+
 def base_convert(val, base, bits):
     """
     Convert a value to string, given base
@@ -115,6 +118,17 @@ def filt(tags, list):
             len(set(m.split(",")) & tags) > 0
         )
     ]
+
+def norm_descr(text):
+    """
+    Replace multiple successive line breaks, tabs and spaces a single space to
+    compactify descriptions.
+
+    >>> norm_descr('Hello
+                    World')
+    'Hello World'
+    """
+    return re.sub(r"[\n\r\t ]+", " ", text)
 
 
 if __name__ == "__main__":

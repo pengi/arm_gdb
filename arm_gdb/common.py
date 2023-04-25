@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 # Copyright © 2023 Max Sikström
+# Copyright © 2023 Niklas Hauser
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the “Software”), to deal
@@ -128,7 +129,7 @@ class ArgCommand(gdb.Command):
 class RegisterDef:
     def __init__(self, name, descr, addr, size, fields=[]):
         self.name = name
-        self.descr = descr
+        self.descr = norm_descr(descr) if descr else None
         self.addr = addr
         self.size = size
         self.fields = fields
@@ -154,7 +155,7 @@ class RegisterDef:
 class Field:
     def __init__(self, name, descr=None, always=False):
         self.name = name
-        self.descr = descr
+        self.descr = norm_descr(descr) if descr else None
         self.always = always
 
     def should_print(self, value):
