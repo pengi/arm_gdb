@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 # Copyright © 2023 Max Sikström
+# Copyright © 2023 Niklas Hauser
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the “Software”), to deal
@@ -473,6 +474,20 @@ def get_scb_regs(model):
                 FieldBitfield("FPEXCODIS", 10, 1),
                 FieldBitfield("DISOOFP", 9, 1),
                 FieldBitfield("DISFOLD", 2, 1),
+            ])),
+            ('M7', RegisterDef("ABFSR - M7", "Auxiliary Bus Fault Status - Cortex M7", 0xE000EFA8, 4, [
+                FieldBitfieldEnum(
+                    "    AXIMTYPE", 8, 2, [
+                        (0, True, "OKAY", None),
+                        (1, False, "EXOKAY", None),
+                        (2, False, "SLVERR", None),
+                        (3, False, "DECERR", None),
+                    ], "Indicates the type of fault on the AXIM interface"),
+                FieldBitfield("EPPB", 4, 1, "Asynchronous fault on EPPB interface"),
+                FieldBitfield("AXIM", 3, 1, "Asynchronous fault on AXIM interface"),
+                FieldBitfield("AHBP", 2, 1, "Asynchronous fault on AHBP interface"),
+                FieldBitfield("DTCM", 1, 1, "Asynchronous fault on DTCM interface"),
+                FieldBitfield("ITCM", 0, 1, "Asynchronous fault on ITCM interface"),
             ])),
         ])
     }
