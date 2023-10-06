@@ -348,15 +348,7 @@ Examples:
     arm list nrf52840 UARTE0
 ```
 
-To use an SVD file from cmsis-svd package database, use:
-```
-(gdb) arm loaddb nrf Nordic nrf52.svd
-```
-
-This loads in the device description under a local name, in this case `nrf` for
-faster access in upcoming commands
-
-It is also possible to load custom svd files, in this case an stm32f7x7:
+To use an SVD file from cmsis-svd package database, first load an SVD file:
 ```
 (gdb) arm loadfile stm32f7x7 /path/to/my/stm32f7x7.svd
 ```
