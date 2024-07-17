@@ -25,7 +25,7 @@ import gdb
 from .common import *
 import traceback
 
-# https://developer.arm.com/documentation/ddi0403/latest/
+#https://developer.arm.com/documentation/ddi0553/latest/
 
 def get_mpu_regs():
     return [
@@ -112,31 +112,25 @@ def print_outer_inner_attr(mair_attr_outer, mair_attr_inner):
         elif device_attr == 0b11:
             print(f"Device memory,   GRE")
 
-def get_mair_attr(reg_addr, offset):
-    value_str = gdb.execute(f"x/1x {reg_addr}", to_string=True)
-    print("mair ", value_str)
-    value_hex = value_str.split(':')[1].strip()
-    value = int(value_hex, 16)
+def get_mair_attr(inf, reg_addr, offset):
+    value = read_reg(inf, reg_addr, 4)
 
     for attr_index in range(0,4):
         attr = value & 0xff
         mair_attr_outer = ( attr & 0xf0 ) >> 4
         mair_attr_inner = ( attr & 0x0f )
-        print("ATTR", attr_index + offset)
         print_outer_inner_attr(mair_attr_outer, mair_attr_inner)
         value = value >> 8
 
-def set_rnr_reg(number):
+def set_rnr_reg(inf, number):
     REG_RNR = 0xE000ED98
-    gdb.execute(f"set *((unsigned int*){REG_RNR}) = {number}", to_string=True)
+    rnr_val_bytes = number.to_bytes(4, byteorder='little')
+    write_reg(inf, REG_RNR, rnr_val_bytes, 4)
 
-def get_mpu_regions_number():
+def get_mpu_regions_number(inf):
     REG_TYPE = 0xE000ED90
-    type_str = gdb.execute(f"x/1x {REG_TYPE}", to_string=True)
-    regions_hex = type_str.split(':')[1].strip()
-    regions_value = int(regions_hex, 16)
-    regions = (regions_value >> 8) & 0xff
-    print(f"MPU region number {regions:#d}")
+    type_value = read_reg(inf, REG_TYPE, 4)
+    regions = (type_value >> 8) & 0xff
 
     return regions
 
@@ -178,37 +172,23 @@ def get_rlar_reg():
         ]),
     ]
 
-def get_mpu_region_start():
+def get_mpu_region_start(inf):
     REG_RBAR = 0xE000ED9C
-    value_str = gdb.execute(f"x/1x {REG_RBAR}", to_string=True)
-    value_hex = value_str.split(':')[1].strip()
-    value = int(value_hex, 16)
+    value = read_reg(inf, REG_RBAR, 4)
     start = value & 0xFFFFFFE0;
     return start
 
-def get_mpu_region_limit():
+def get_mpu_region_limit(inf):
     REG_RLAR = 0xE000EDA0
-    value_str = gdb.execute(f"x/1x {REG_RLAR}", to_string=True)
-    value_hex = value_str.split(':')[1].strip()
-    value = int(value_hex, 16)
+    value = read_reg(inf, REG_RLAR, 4)
     limit = value & 0xFFFFFFE0;
     return limit
 
-def mpu_region_enable():
+def mpu_current_region_is_enabled(inf):
     REG_RLAR = 0xE000EDA0
-    value_str = gdb.execute(f"x/1x {REG_RLAR}", to_string=True)
-    value_hex = value_str.split(':')[1].strip()
-    value = int(value_hex, 16)
+    value = read_reg(inf, REG_RLAR, 4)
     enabled = bool(value & 0x01)
     return enabled
-
-def get_mpu_regions():
-    set_rnr_reg(1)
-    reg = get_rbar_reg()
-    reg.dump(inf, args['descr'], base=base, all=args['all'])
-
-    reg = get_rlar_reg()
-    reg.dump(inf, args['descr'], base=base, all=args['all'])
 
 class ArmToolsMPU (ArgCommand):
     """Dump of ARM Cortex-M MPU - SCB registers for the FP extension
@@ -248,17 +228,20 @@ Modifier /b prints bitmasks in binary instead of hex
 
         print("MPU MAIR registers:")
         REG_MAIR0 = 0xE000EDC0
-        get_mair_attr(REG_MAIR0, 0)
+        get_mair_attr(inf, REG_MAIR0, 0)
         REG_MAIR1 = 0xE000EDC4
-        get_mair_attr(REG_MAIR1, 4)
+        get_mair_attr(inf, REG_MAIR1, 4)
 
-        regions = get_mpu_regions_number()
+        REG_RNR = 0xE000ED98
+        rnr_val = read_reg(inf, REG_RNR, 4)
+        regions = get_mpu_regions_number(inf)
+        print(f"there are {regions:#d} regions")
         for i in range(1, regions):
-            set_rnr_reg(i)
-            if  mpu_region_enable():
+            set_rnr_reg(inf, i)
+            if mpu_current_region_is_enabled(inf):
                 print("mpu region: ", i)
-                start = get_mpu_region_start()
-                limit = get_mpu_region_limit()
+                start = get_mpu_region_start(inf)
+                limit = get_mpu_region_limit(inf)
                 print(f"region start at {start:#x}")
                 print(f"region end   at {limit:#x}")
                 regs = get_rbar_reg()
@@ -269,4 +252,7 @@ Modifier /b prints bitmasks in binary instead of hex
                 for reg in regs:
                     reg.dump(inf, args['descr'], base=base, all=args['all'])
 
+        #restore RNR register
+        rnr_val_bytes = rnr_val.to_bytes(4, byteorder='little')
+        write_reg(inf, REG_RNR, rnr_val_bytes, 4)
 
