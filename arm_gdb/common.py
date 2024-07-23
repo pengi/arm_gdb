@@ -30,6 +30,8 @@ def read_reg(inf, addr, len):
     bs = inf.read_memory(addr, len).tobytes()
     return sum(v << (8*i) for i, v in enumerate(bs))
 
+def write_reg(inf, addr, buf, len):
+    inf.write_memory(addr, buf, len)
 
 class ArgType:
     def __init__(self, name, completer=None, getter=None, optional=False):
