@@ -55,32 +55,34 @@ def get_mpu_common_regs(model):
                 (0b1110, None, "Normal Memory, Outer Write-Back Non-transient, Allocate R", None),
                 (0b1111, None, "Normal Memory, Outer Write-Back Non-transient, Allocate RW", None),
             ], "Outer attributes. Specifies the Outer memory attributes."),
-            #TODO: filter this, only show when Outer == Device Memory
-            FieldBitfieldEnum(f"Device {num}", offset + 2, 2, [
-                (0b00, None, "Device-nGnRnE.", None),
-                (0b01, None, "Device-nGnRE.", None),
-                (0b10, None, "Device-nGRE.", None),
-                (0b11, None, "Device-GRE", None),
-            ], "Device attributes. Specifies the memory attributes for Device. (Valid only if Outer == 0)"),
-            #TODO: filter this, only show when Outer != Device Memory
-            FieldBitfieldEnum(f"Inner {num}", offset + 0, 4, [
-                (0b0000, None, "UNPREDICTABLE", None),
-                (0b0001, None, "Normal Memory, Inner Write-Through transient, Allocate W", None),
-                (0b0010, None, "Normal Memory, Inner Write-Through transient, Allocate R", None),
-                (0b0011, None, "Normal Memory, Inner Write-Through transient, Allocate RW", None),
-                (0b0100, None, "Normal Memory, Inner Non-cacheable", None),
-                (0b0101, None, "Normal Memory, Inner Write-Back Transient, Allocate W", None),
-                (0b0110, None, "Normal Memory, Inner Write-Back Transient, Allocate R", None),
-                (0b0111, None, "Normal Memory, Inner Write-Back Transient, Allocate RW", None),
-                (0b1000, None, "Normal Memory, Inner Write-Through Non-transient", None),
-                (0b1001, None, "Normal Memory, Inner Write-Through Non-transient, Allocate W", None),
-                (0b1010, None, "Normal Memory, Inner Write-Through Non-transient, Allocate R", None),
-                (0b1011, None, "Normal Memory, Inner Write-Through Non-transient, Allocate RW", None),
-                (0b1100, None, "Normal Memory, Inner Write-Back Non-transient", None),
-                (0b1101, None, "Normal Memory, Inner Write-Back Non-transient, Allocate W", None),
-                (0b1110, None, "Normal Memory, Inner Write-Back Non-transient, Allocate R", None),
-                (0b1111, None, "Normal Memory, Inner Write-Back Non-transient, Allocate RW", None),
-            ], "Device attributes. Specifies the memory attributes for Device. (Valid only if Outer != 0)")
+            FieldConditional(lambda value: value & (0xf0 << offset) == 0,
+                FieldBitfieldEnum(f"Device {num}", offset + 2, 2, [
+                    (0b00, None, "Device-nGnRnE.", None),
+                    (0b01, None, "Device-nGnRE.", None),
+                    (0b10, None, "Device-nGRE.", None),
+                    (0b11, None, "Device-GRE", None),
+                ], "Device attributes. Specifies the memory attributes for Device.")
+            ),
+            FieldConditional(lambda value: value & (0xf0 << offset) != 0,
+                FieldBitfieldEnum(f"Inner {num}", offset + 0, 4, [
+                    (0b0000, None, "UNPREDICTABLE", None),
+                    (0b0001, None, "Normal Memory, Inner Write-Through transient, Allocate W", None),
+                    (0b0010, None, "Normal Memory, Inner Write-Through transient, Allocate R", None),
+                    (0b0011, None, "Normal Memory, Inner Write-Through transient, Allocate RW", None),
+                    (0b0100, None, "Normal Memory, Inner Non-cacheable", None),
+                    (0b0101, None, "Normal Memory, Inner Write-Back Transient, Allocate W", None),
+                    (0b0110, None, "Normal Memory, Inner Write-Back Transient, Allocate R", None),
+                    (0b0111, None, "Normal Memory, Inner Write-Back Transient, Allocate RW", None),
+                    (0b1000, None, "Normal Memory, Inner Write-Through Non-transient", None),
+                    (0b1001, None, "Normal Memory, Inner Write-Through Non-transient, Allocate W", None),
+                    (0b1010, None, "Normal Memory, Inner Write-Through Non-transient, Allocate R", None),
+                    (0b1011, None, "Normal Memory, Inner Write-Through Non-transient, Allocate RW", None),
+                    (0b1100, None, "Normal Memory, Inner Write-Back Non-transient", None),
+                    (0b1101, None, "Normal Memory, Inner Write-Back Non-transient, Allocate W", None),
+                    (0b1110, None, "Normal Memory, Inner Write-Back Non-transient, Allocate R", None),
+                    (0b1111, None, "Normal Memory, Inner Write-Back Non-transient, Allocate RW", None),
+                ], "Device attributes. Specifies the memory attributes for Device.")
+            ),
         ]
     return [
         RegisterDef("MPU_TYPE", "MPU Type Register", 0xE000ED90, 4, [

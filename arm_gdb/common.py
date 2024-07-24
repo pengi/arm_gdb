@@ -151,7 +151,7 @@ class RegisterDef:
               )
 
         for field in self.fields:
-            if all or field.should_print(m_int):
+            if field.should_print(m_int, show_all=all):
                 field.print(m_int, include_descr, base=base)
 
 
@@ -161,7 +161,7 @@ class Field:
         self.descr = norm_descr(descr) if descr else None
         self.always = always
 
-    def should_print(self, value):
+    def should_print(self, value, show_all=False):
         return False
 
     def get_value(self, value):
@@ -190,6 +190,26 @@ class Field:
             )
         )
 
+class FieldConditional(Field):
+    def __init__(self, condition, field):
+        super().__init__(field.name, field.descr, field.always)
+        self.field = field
+        self.condition = condition
+    
+    def should_print(self, value, show_all=False):
+        return self.condition(value) and self.field.should_print(value, show_all=show_all)
+
+    def get_value(self, value):
+        return self.field.get_value(value)
+
+    def get_print_bits(self, value, base=4):
+        return self.field.get_print_bits(value, value, base)
+
+    def get_print_value(self, value):
+        return self.field.get_print_value(value, value)
+
+    def print(self, value, include_descr=True, base=4):
+        return self.field.print(value, include_descr, base)
 
 class FieldBitfield(Field):
     def __init__(self, name, bit_offset, bit_width, descr=None, always=False):
@@ -197,8 +217,8 @@ class FieldBitfield(Field):
         self.bit_offset = bit_offset
         self.bit_width = bit_width
 
-    def should_print(self, value):
-        return self.always or self.get_value(value) != 0
+    def should_print(self, value, show_all=False):
+        return self.always or show_all or self.get_value(value) != 0
 
     def get_value(self, value):
         return (value >> self.bit_offset) & ((1 << self.bit_width)-1)
@@ -229,8 +249,8 @@ class FieldBitfieldEnum(FieldBitfield):
         except:
             return format_int(self.get_value(value), self.bit_width)
 
-    def should_print(self, value):
-        if self.always:
+    def should_print(self, value, show_all=False):
+        if self.always or show_all:
             return True
         try:
             v, is_default, name, descr = self.get_enum_value(value)
