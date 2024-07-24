@@ -524,6 +524,7 @@ Modifier /f force printing fields from all Cortex-M models
 
             # Detect CPU type, convert to a useful key for dicts
             CPUID = read_reg(inf, 0xE000ED00, 4)
+            # TODO: this needs some better way than just adding variants
             model = {
                 "4100c200": ["M0", "v6"],
                 "4100c600": ["M0+", "v6"],
@@ -534,6 +535,7 @@ Modifier /f force printing fields from all Cortex-M models
                 # TODO: support ARMv8-M, for now pretend it's v7, since it's similar
                 "4100d200": ["M23", "v8"],
                 "4100d210": ["M33", "v8"],
+                "63001320": ["M55", "v8"],
             }.get(format_int(CPUID & 0xff00fff0, 32), None)
 
             print("SCB for Cortex-%s - ARM%s-M" %

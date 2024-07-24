@@ -37,7 +37,7 @@ import traceback
 def get_mpu_common_regs(model):
     def mair_attr_fields(num, offset):
         return [
-            FieldBitfieldEnum(f"Outer {num}", offset+4, 4, [
+            FieldBitfieldEnum(f"Outer {num}", offset + 4, 4, [
                 (0b0000, None, "Device Memory", None),
                 (0b0001, None, "Normal Memory, Outer Write-Through transient, Allocate W", None),
                 (0b0010, None, "Normal Memory, Outer Write-Through transient, Allocate R", None),
@@ -80,7 +80,7 @@ def get_mpu_common_regs(model):
                 (0b1101, None, "Normal Memory, Inner Write-Back Non-transient, Allocate W", None),
                 (0b1110, None, "Normal Memory, Inner Write-Back Non-transient, Allocate R", None),
                 (0b1111, None, "Normal Memory, Inner Write-Back Non-transient, Allocate RW", None),
-            ], "Device attributes. Specifies the memory attributes for Device. (Valid only if Outer == 0)")
+            ], "Device attributes. Specifies the memory attributes for Device. (Valid only if Outer != 0)")
         ]
     return [
         RegisterDef("MPU_TYPE", "MPU Type Register", 0xE000ED90, 4, [
@@ -118,11 +118,11 @@ def get_mpu_common_regs(model):
 def get_mpu_region_regs(model):
     return [
         RegisterDef(f"MPU_RBAR", f"MPU Region Base Address Register", 0xE000ED9C, 4, [
-            FieldBitfield("BASE", 5, 27,
+            FieldBitfieldMap("BASE", 5, 27, lambda x: format_int(x << 5, 32),
                         "Base address. Contains bits [31:5] of the lower inclusive limit of the selected MPU memory region"),
             FieldBitfieldEnum("SH", 3, 2, [
                             (0b00, False, "Non-shareable.", None),
-                            (0b01, False, "invalid", None),
+                            (0b01, False, "Invalid", None),
                             (0b10, False, "Outer Shareable.", None),
                             (0b11, False, "Inner Shareable.", None),
                         ],
@@ -141,7 +141,7 @@ def get_mpu_region_regs(model):
                         "Execute-never. Defines whether code can be executed from this region"),
         ]),
         RegisterDef(f"MPU_RLAR", f"MPU Region Limit Address Register", 0xE000EDA0, 4, [
-            FieldBitfield("LIMIT", 5, 27,
+            FieldBitfieldMap("LIMIT", 5, 27, lambda x: format_int(x << 5, 32),
                         "Limit address. Contains bits [31:5] of the upper inclusive limit of the selected MPU memory region"),
             FieldBitfieldEnum("PXN", 4, 1, [
                             (0b0, False, "Execution only permitted if read permitted.", None),
@@ -215,6 +215,7 @@ Modifier /f force printing fields from all Cortex-M models
                 # TODO: support ARMv8-M, for now pretend it's v7, since it's similar
                 "4100d200": ["M23", "v8"],
                 "4100d210": ["M33", "v8"],
+                "63001320": ["M55", "v8"],
             }.get(format_int(CPUID & 0xff00fff0, 32), None)
 
             if "v8" not in model and not args['force']:
