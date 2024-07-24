@@ -65,7 +65,7 @@ def get_mpu_common_regs(model):
             ),
             FieldConditional(lambda value: value & (0xf0 << offset) != 0,
                 FieldBitfieldEnum(f"Inner {num}", offset + 0, 4, [
-                    (0b0000, None, "UNPREDICTABLE", None),
+                    (0b0000, None, "Unpredictable", None),
                     (0b0001, None, "Normal Memory, Inner Write-Through transient, Allocate W", None),
                     (0b0010, None, "Normal Memory, Inner Write-Through transient, Allocate R", None),
                     (0b0011, None, "Normal Memory, Inner Write-Through transient, Allocate RW", None),
@@ -81,7 +81,7 @@ def get_mpu_common_regs(model):
                     (0b1101, None, "Normal Memory, Inner Write-Back Non-transient, Allocate W", None),
                     (0b1110, None, "Normal Memory, Inner Write-Back Non-transient, Allocate R", None),
                     (0b1111, None, "Normal Memory, Inner Write-Back Non-transient, Allocate RW", None),
-                ], "Device attributes. Specifies the memory attributes for Device.")
+                ], "Inner attributes. Specifies the Inner memory attributes.")
             ),
         ]
     return [

@@ -279,6 +279,73 @@ IRQn Prio          Handler
   32   20 en          0002a783 -
 ```
 
+MPU - Memory Protection Unit
+----------------------------
+
+Readout for the registers in the memory protection unit on ARMv8-M devices.
+
+```
+(gdb) help arm mpu
+Dump of ARM Cortex-M MPU - Memory Protection Unit registers
+
+Usage: arm mpu [/habf]
+
+Modifier /h provides descriptions of names where available
+Modifier /a Print all fields, including default values and disabled regions
+Modifier /b prints bitmasks in binary instead of hex
+Modifier /f force printing fields from all Cortex-M models
+```
+
+```
+(gdb) arm mpu
+MPU for Cortex-M33 - ARMv8-M
+
+MPU common registers:
+
+MPU_TYPE                         = 00001000 
+    DREGION                        ....10.. - 10             
+    SEPARATE                       .......0 - 0              
+MPU_CTRL                         = 00000000 
+    PRIVDEFENA                     .......0 - 0              
+    HFNMIENA                       .......0 - 0              
+    ENABLE                         .......0 - 0              
+MPU_RNR                          = 0000000f 
+    REGION                         ......0f - 0f             
+MPU_MAIR0                        = 00000000 
+    Outer 0                        ......0. - Device Memory  
+    Device 0                       .......0 - Device-nGnRnE. 
+    Outer 1                        ....0... - Device Memory  
+    Device 1                       .....0.. - Device-nGnRnE. 
+    Outer 2                        ..0..... - Device Memory  
+    Device 2                       ...0.... - Device-nGnRnE. 
+    Outer 3                        0....... - Device Memory  
+    Device 3                       .0...... - Device-nGnRnE. 
+MPU_MAIR1                        = 00000000 
+    Outer 4                        ......0. - Device Memory  
+    Device 4                       .......0 - Device-nGnRnE. 
+    Outer 6                        ..0..... - Device Memory  
+    Device 6                       ...0.... - Device-nGnRnE. 
+    Outer 5                        ....0... - Device Memory  
+    Device 5                       .....0.. - Device-nGnRnE. 
+    Outer 7                        0....... - Device Memory  
+    Device 7                       .0...... - Device-nGnRnE. 
+
+MPU registers for region 0:
+
+MPU_RBAR                         = 00000000 
+    BASE                           0000000. - 00000000       
+    SH                             ......00 - Non-shareable. 
+    AP                             .......0 - Read/write by privileged code only.
+    XN                             .......0 - Execution only permitted if read permitted
+MPU_RLAR                         = 00000000 
+    LIMIT                          0000000. - 00000000       
+    PXN                            ......0. - Execution only permitted if read permitted.
+    AttrIndx                       .......0 - 0              
+    EN                             .......0 - Region disabled.
+
+MPU registers for region 1:
+```
+
 SVD - Implementation specific peripherals
 -----------------------------------------
 
