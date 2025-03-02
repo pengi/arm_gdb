@@ -25,6 +25,8 @@
 import gdb
 from .lib import *
 
+import functools
+import traceback
 
 def read_reg(inf, addr, len):
     bs = inf.read_memory(addr, len).tobytes()
@@ -271,3 +273,14 @@ class FieldBit(FieldBitfield):
     def __init__(self, name, bit, descr=None, always=False):
         super().__init__(name, bit, 1, descr, always=always)
         self.bit = bit
+
+def trace_exceptions(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            print("Caught an exception: ", e)
+            traceback.print_exception(e)
+            raise e
+    return wrapper

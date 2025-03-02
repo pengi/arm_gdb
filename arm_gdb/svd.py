@@ -103,6 +103,7 @@ Examples:
         self.add_arg(PeripheralsArgType('peripheral', 'device', optional=True))
         self.add_arg(RegistersArgType('register', 'peripheral', optional=True))
 
+    @trace_exceptions
     def invoke(self, argument, from_tty):
         args = self.process_args(argument)
         if args is None:
@@ -128,6 +129,7 @@ Examples:
             peripheral = args['peripheral']
             if 'register' in args:
                 registers = [args['register']]
+                print('A', type(peripheral))
                 print(
                     "Register %s in %s @ 0x%08x:" % (
                         registers[0].name,
@@ -136,7 +138,8 @@ Examples:
                     )
                 )
             else:
-                registers = peripheral.registers
+                registers = peripheral.get_registers()
+                print('B', type(peripheral))
                 print(
                     "Registers in %s @ 0x%08x:" % (
                         peripheral.name,
@@ -151,7 +154,7 @@ Examples:
                         register.address_offset
                     )
                 )
-                for field in sorted(register._fields, key=lambda f: f.bit_offset):
+                for field in sorted(register.fields, key=lambda f: f.bit_offset):
                     mask = "." * (32-field.bit_offset-field.bit_width) + \
                         "#" * field.bit_width + "." * field.bit_offset
 
@@ -185,6 +188,7 @@ Examples:
         self.add_mod('a', 'all')
         self.add_mod('b', 'binary')
 
+    @trace_exceptions
     def invoke(self, argument, from_tty):
         args = self.process_args(argument)
         if args is None:
@@ -195,13 +199,13 @@ Examples:
 
         peripheral = args['peripheral']
         registers = [args['register']] if 'register' in args \
-                    else peripheral.registers
+                    else peripheral.get_registers()
 
         inf = gdb.selected_inferior()
 
         for register in sorted(registers, key=lambda r: r.address_offset):
             fields = []
-            for field in sorted(register._fields, key=lambda f: f.bit_offset):
+            for field in sorted(register.get_fields(), key=lambda f: f.bit_offset):
                 if field.is_enumerated_type:
                     fields.append(FieldBitfieldEnum(
                         field.name,
@@ -209,7 +213,8 @@ Examples:
                         field.bit_width,
                         [
                             (ev.value, ev.is_default, ev.name, ev.description)
-                            for ev in field.enumerated_values
+                            for evs in field.enumerated_values
+                            for ev in evs.enumerated_values
                         ],
                         field.description
                     ))
