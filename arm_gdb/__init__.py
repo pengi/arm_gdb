@@ -27,6 +27,7 @@ from . import fpu
 from . import systick
 from . import nvic
 from . import mpu
+from . import sau
 from . import svd
 
 class ArmTools (gdb.Command):
@@ -45,6 +46,7 @@ fpu.ArmToolsFPU()
 systick.ArmToolsSysTick()
 nvic.ArmToolsNVIC()
 mpu.ArmToolsMPU()
+sau.ArmToolsSAU()
 svd.ArmToolsSVDList()
 svd.ArmToolsSVDInspect()
 svd.ArmToolsSVDLoadFile()
